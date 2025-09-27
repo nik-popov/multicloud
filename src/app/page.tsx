@@ -66,7 +66,8 @@ export default function Home() {
         router.replace('/', undefined);
       }
     }
-  }, [searchParams, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     const storedFavorites = localStorage.getItem('bulkshorts_favorites');
@@ -150,11 +151,6 @@ export default function Home() {
 
       return (
         <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
-          {viewMode === 'favorites' && (
-            <h2 className="text-3xl font-bold text-center mb-8">
-              My Favorites
-            </h2>
-          )}
           <VideoGrid
             urls={urlsForGrid}
             favorites={favorites}

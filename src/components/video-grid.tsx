@@ -316,7 +316,9 @@ export function VideoGrid({
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-center mb-8">Video Discoveries</h2>
+      {viewMode === 'favorites' && (
+        <h2 className="text-2xl font-bold text-center mb-8">My Favorites</h2>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
           <div className="sticky top-4 h-min hidden md:block">
             <Card className="p-4 bg-card/80 backdrop-blur-sm">
