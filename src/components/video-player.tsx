@@ -12,17 +12,20 @@ type VideoPlayerProps = {
   src: string;
   onClick?: () => void;
   isFocusView?: boolean;
+  isLiked: boolean;
+  onToggleLike: () => void;
 };
 
 export function VideoPlayer({
   src,
   onClick,
   isFocusView = false,
+  isLiked,
+  onToggleLike
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [aspectRatio, setAspectRatio] = useState('9/16');
-  const [isLiked, setIsLiked] = useState(false);
   const [showHeart, setShowHeart] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isHovering, setIsHovering] = useState(false);
@@ -59,9 +62,8 @@ export function VideoPlayer({
   
   const handleDoubleClick = () => {
     if (!isFocusView) return;
-    const newLikedState = !isLiked;
-    setIsLiked(newLikedState);
-    if (newLikedState) {
+    onToggleLike();
+    if (!isLiked) {
       setShowHeart(true);
       setTimeout(() => {
         setShowHeart(false);
@@ -69,10 +71,6 @@ export function VideoPlayer({
     }
   };
   
-  const toggleLike = () => {
-    setIsLiked(!isLiked);
-  }
-
   const handleFullscreen = () => {
     if (videoRef.current) {
       if (videoRef.current.requestFullscreen) {
@@ -88,13 +86,13 @@ export function VideoPlayer({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className={cn("flex items-center justify-center w-full", isFocusView ? 'h-full' : '')}>
+      <div className={cn("flex items-center justify-center w-auto", isFocusView ? 'h-full' : 'w-full')}>
         <Card
           className={cn(
             'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl h-full',
             isFocusView
-              ? 'bg-black w-auto max-w-sm'
-              : 'cursor-pointer hover:scale-105 w-full'
+              ? 'bg-black w-auto'
+              : 'cursor-pointer hover:scale-105 w-full bg-card'
           )}
           style={{aspectRatio: isFocusView ? aspectRatio : '9/16'}}
           onClick={!isFocusView ? onClick : undefined}
@@ -130,6 +128,11 @@ export function VideoPlayer({
                   <Heart className="h-24 w-24 text-white/90 animate-in fade-in zoom-in-125 fill-red-500/80 duration-500" />
                 </div>
               )}
+               {isLiked && !isFocusView && (
+                <div className="absolute top-2 right-2 pointer-events-none">
+                  <Heart className="h-6 w-6 text-red-500 fill-red-500" />
+                </div>
+              )}
               {isFocusView && (
                 <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center text-white/70 text-xs font-semibold animate-pulse group-hover:opacity-0 transition-opacity">
                   <MousePointer className="h-4 w-4 mr-2" />
@@ -150,7 +153,7 @@ export function VideoPlayer({
           <Button
             variant="ghost"
             size="icon"
-            onClick={toggleLike}
+            onClick={onToggleLike}
             className="text-white hover:text-red-500 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
           >
             <Heart className={cn("h-6 w-6", isLiked && "fill-red-500")} />

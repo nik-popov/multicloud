@@ -19,6 +19,7 @@ import {Slider} from './ui/slider';
 import {Label} from './ui/label';
 import {Switch} from './ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { VideoPlayer } from './video-player';
 
 type UrlProcessorProps = {
   showForm: boolean;
@@ -27,9 +28,20 @@ type UrlProcessorProps = {
   history: any[];
   initialUrls?: string[];
   loadBatch: (urls: string[]) => void;
+  favorites: string[];
+  onToggleFavorite: (url: string) => void;
 };
 
-export function UrlProcessor({ showForm, onProcessStart, setHistory, history, initialUrls, loadBatch }: UrlProcessorProps) {
+export function UrlProcessor({ 
+  showForm, 
+  onProcessStart, 
+  setHistory, 
+  history, 
+  initialUrls, 
+  loadBatch, 
+  favorites,
+  onToggleFavorite
+}: UrlProcessorProps) {
   const [urls, setUrls] = useState<string[]>(initialUrls || []);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'grid' | 'focus'>('grid');
@@ -270,6 +282,7 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
                   name="urls"
                   placeholder={`https://example.com/video1.mp4\nhttps://anothersite.org/media.mp4\n...and so on`}
                   className="min-h-[150px] resize-y font-mono text-sm"
+                  defaultValue={initialUrls?.join('\n')}
                 />
                  <input
                   type="file"
@@ -322,11 +335,14 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
                 <h2 className="text-2xl font-bold text-center">History</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {history.map((batch, index) => (
-                    <Card key={index} className="bg-card/80 backdrop-blur-sm hover:border-primary transition-colors">
-                      <CardHeader>
+                    <Card key={index} className="bg-card/80 backdrop-blur-sm hover:border-primary transition-colors flex flex-col">
+                      <CardHeader className="flex-grow">
                         <CardTitle className="text-lg">{new Date(batch.timestamp).toLocaleString()}</CardTitle>
                         <CardDescription>{batch.urls.length} videos</CardDescription>
                       </CardHeader>
+                      <CardContent className="h-48 w-full p-0 overflow-hidden rounded-t-lg">
+                        <VideoPlayer src={batch.urls[0]} isFocusView={false} />
+                      </CardContent>
                       <CardFooter>
                         <Button variant="secondary" onClick={() => loadBatch(batch.urls)}>
                           Load Batch
@@ -361,6 +377,8 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
                   history={history}
                   loadBatch={loadBatch}
                   onBackToGrid={handleBackToGrid}
+                  favorites={favorites}
+                  onToggleFavorite={onToggleFavorite}
                 />
               </div>
           </div>

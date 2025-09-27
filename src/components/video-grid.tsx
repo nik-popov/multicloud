@@ -9,24 +9,28 @@ import { Separator } from './ui/separator';
 
 type VideoGridProps = {
   urls: string[];
-  view: 'grid' | 'focus';
-  selectedUrl: string | null;
-  onSelectVideo: (url: string) => void;
+  view?: 'grid' | 'focus';
+  selectedUrl?: string | null;
+  onSelectVideo?: (url: string) => void;
   gridCols?: number;
-  history: any[];
-  loadBatch: (urls: string[]) => void;
-  onBackToGrid: () => void;
+  history?: any[];
+  loadBatch?: (urls: string[]) => void;
+  onBackToGrid?: () => void;
+  favorites: string[];
+  onToggleFavorite: (url: string) => void;
 };
 
 export function VideoGrid({
   urls,
-  view,
+  view = 'grid',
   selectedUrl,
-  onSelectVideo,
+  onSelectVideo = () => {},
   gridCols = 4,
   history = [],
-  loadBatch,
-  onBackToGrid,
+  loadBatch = () => {},
+  onBackToGrid = () => {},
+  favorites,
+  onToggleFavorite,
 }: VideoGridProps) {
   const isGridView = view === 'grid';
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -91,6 +95,8 @@ export function VideoGrid({
               <VideoPlayer
                 src={url}
                 isFocusView={true}
+                isLiked={favorites.includes(url)}
+                onToggleLike={() => onToggleFavorite(url)}
               />
             </div>
           ))}
@@ -126,6 +132,8 @@ export function VideoGrid({
               src={url}
               onClick={() => onSelectVideo(url)}
               isFocusView={false}
+              isLiked={favorites.includes(url)}
+              onToggleLike={() => onToggleFavorite(url)}
             />
           </div>
         ))}
