@@ -1,51 +1,52 @@
 'use server';
 
 /**
- * @fileOverview A flow for validating and filtering URLs using AI.
+ * @fileOverview A flow for validating and filtering a single URL using AI.
  *
- * - validateAndFilterUrls - A function that validates a list of URLs and removes invalid ones.
- * - ValidateAndFilterUrlsInput - The input type for the validateAndFilterUrls function.
- * - ValidateAndFilterUrlsOutput - The return type for the validateAndFilterUrls function.
+ * - validateAndFilterUrl - A function that validates a single URL.
+ * - ValidateAndFilterUrlInput - The input type for the validateAndFilterUrl function.
+ * - ValidateAndFilterUrlOutput - The return type for the validateAndFilterUrl function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const ValidateAndFilterUrlsInputSchema = z.object({
-  urls: z
-    .string()
-    .describe('A list of URLs, separated by newlines.')
+const ValidateAndFilterUrlInputSchema = z.object({
+  url: z.string().describe('A single URL to validate.'),
 });
-export type ValidateAndFilterUrlsInput = z.infer<typeof ValidateAndFilterUrlsInputSchema>;
+export type ValidateAndFilterUrlInput = z.infer<typeof ValidateAndFilterUrlInputSchema>;
 
-const ValidateAndFilterUrlsOutputSchema = z.object({
-  validUrls: z.array(z.string()).describe('A list of valid URLs.'),
+const ValidateAndFilterUrlOutputSchema = z.object({
+  isValid: z.boolean().describe('Whether the URL is valid or not.'),
 });
-export type ValidateAndFilterUrlsOutput = z.infer<typeof ValidateAndFilterUrlsOutputSchema>;
+export type ValidateAndFilterUrlOutput = z.infer<typeof ValidateAndFilterUrlOutputSchema>;
 
-export async function validateAndFilterUrls(input: ValidateAndFilterUrlsInput): Promise<ValidateAndFilterUrlsOutput> {
-  return validateAndFilterUrlsFlow(input);
+export async function validateAndFilterUrl(
+  input: ValidateAndFilterUrlInput
+): Promise<ValidateAndFilterUrlOutput> {
+  return validateAndFilterUrlFlow(input);
 }
 
-const validateUrlsPrompt = ai.definePrompt({
-  name: 'validateUrlsPrompt',
-  input: {schema: ValidateAndFilterUrlsInputSchema},
-  output: {schema: ValidateAndFilterUrlsOutputSchema},
-  prompt: `You are an expert at determining whether a URL is valid or not.
-
-  Given a list of URLs, determine which ones are valid and return them in a list.
-
-  URLs:\n{{urls}}`,
+const validateUrlPrompt = ai.definePrompt({
+  name: 'validateUrlPrompt',
+  input: {schema: ValidateAndFilterUrlInputSchema},
+  output: {schema: ValidateAndFilterUrlOutputSchema},
+  prompt: `You are an expert at determining whether a URL is a valid video URL.
+  
+  Given a URL, determine if it is a valid, publicly accessible video URL.
+  The URL should point directly to a video file (e.g., .mp4, .mov, .webm).
+  
+  URL: {{url}}`,
 });
 
-const validateAndFilterUrlsFlow = ai.defineFlow(
+const validateAndFilterUrlFlow = ai.defineFlow(
   {
-    name: 'validateAndFilterUrlsFlow',
-    inputSchema: ValidateAndFilterUrlsInputSchema,
-    outputSchema: ValidateAndFilterUrlsOutputSchema,
+    name: 'validateAndFilterUrlFlow',
+    inputSchema: ValidateAndFilterUrlInputSchema,
+    outputSchema: ValidateAndFilterUrlOutputSchema,
   },
   async input => {
-    const {output} = await validateUrlsPrompt(input);
+    const {output} = await validateUrlPrompt(input);
     return output!;
   }
 );

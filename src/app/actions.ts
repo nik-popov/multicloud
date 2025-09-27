@@ -1,51 +1,44 @@
 'use server';
 
-import { validateAndFilterUrls } from '@/ai/flows/validate-and-filter-urls';
-import { z } from 'zod';
+import {validateAndFilterUrl} from '@/ai/flows/validate-and-filter-urls';
+import {z} from 'zod';
 
 const actionSchema = z.object({
-  urls: z.string().min(1, { message: 'Please enter at least one URL.' }),
+  url: z.string().min(1, {message: 'URL cannot be empty.'}),
 });
 
 export type ValidationState = {
-  data: string[] | null;
+  validUrl: string | null;
   error: string | null;
 };
 
-export async function validateUrlsAction(
-  prevState: ValidationState,
-  formData: FormData
+export async function validateUrlAction(
+  url: string
 ): Promise<ValidationState> {
-  const rawInput = {
-    urls: formData.get('urls'),
-  };
-
-  const validatedFields = actionSchema.safeParse(rawInput);
+  const validatedFields = actionSchema.safeParse({url});
 
   if (!validatedFields.success) {
     return {
-      data: null,
-      error: validatedFields.error.errors.map((e) => e.message).join(', '),
+      validUrl: null,
+      error: validatedFields.error.errors.map(e => e.message).join(', '),
     };
   }
 
   try {
-    const result = await validateAndFilterUrls({
-      urls: validatedFields.data.urls,
+    const result = await validateAndFilterUrl({
+      url: validatedFields.data.url,
     });
-    if (result.validUrls.length === 0) {
-      return {
-        data: [],
-        error: 'No valid URLs were found. Please check your list and try again.',
-      };
+
+    if (result.isValid) {
+      return {validUrl: validatedFields.data.url, error: null};
+    } else {
+      return {validUrl: null, error: null}; // Not an error, just invalid
     }
-    return { data: result.validUrls, error: null };
   } catch (e) {
     console.error(e);
     return {
-      data: null,
-      error:
-        'An unexpected error occurred while validating URLs. Please try again later.',
+      validUrl: null,
+      error: `An error occurred while validating ${url}.`,
     };
   }
 }
