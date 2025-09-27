@@ -30,6 +30,7 @@ type UrlProcessorProps = {
   loadBatch: (urls: string[]) => void;
   favorites: string[];
   onToggleFavorite: (url: string) => void;
+  onFocusViewChange: (isFocusView: boolean) => void;
 };
 
 export function UrlProcessor({ 
@@ -40,7 +41,8 @@ export function UrlProcessor({
   initialUrls, 
   loadBatch, 
   favorites,
-  onToggleFavorite
+  onToggleFavorite,
+  onFocusViewChange
 }: UrlProcessorProps) {
   const [urls, setUrls] = useState<string[]>(initialUrls || []);
   const [error, setError] = useState<string | null>(null);
@@ -59,6 +61,10 @@ export function UrlProcessor({
   const {toast} = useToast();
 
   const hasUrls = urls.length > 0;
+  
+  useEffect(() => {
+    onFocusViewChange(view === 'focus');
+  }, [view, onFocusViewChange]);
   
   useEffect(() => {
     if (initialUrls) {
@@ -199,7 +205,7 @@ export function UrlProcessor({
   };
   
   const Controls = () => (
-     <div className="flex flex-col gap-4 sticky top-24 h-min">
+     <div className="flex flex-col gap-4 sticky top-4 h-min">
         <Card className="p-4 bg-card/80 backdrop-blur-sm">
           <CardContent className="p-0 flex flex-col items-center gap-4">
             <div className="flex items-center justify-between w-full">
@@ -264,7 +270,7 @@ export function UrlProcessor({
 
   return (
     <div className="space-y-8">
-      {showForm && !isPending && (
+      {showForm && !isPending && view === 'grid' && (
         <>
           <Card className="w-full shadow-lg max-w-3xl mx-auto bg-card/80 backdrop-blur-sm mt-12">
             <form onSubmit={handleSubmit} ref={formRef}>
@@ -365,8 +371,23 @@ export function UrlProcessor({
       <div ref={resultRef} className="relative">
         {hasUrls && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
-               <Controls />
+            {view === 'grid' ? (
+               <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
+                  <Controls />
+                  <VideoGrid
+                    urls={urls ?? []}
+                    view={view}
+                    selectedUrl={selectedUrl}
+                    onSelectVideo={handleSelectVideo}
+                    gridCols={gridSize}
+                    history={history}
+                    loadBatch={loadBatch}
+                    onBackToGrid={handleBackToGrid}
+                    favorites={favorites}
+                    onToggleFavorite={onToggleFavorite}
+                  />
+               </div>
+            ) : (
                 <VideoGrid
                   urls={urls ?? []}
                   view={view}
@@ -378,8 +399,9 @@ export function UrlProcessor({
                   onBackToGrid={handleBackToGrid}
                   favorites={favorites}
                   onToggleFavorite={onToggleFavorite}
+                  controls={<Controls />}
                 />
-              </div>
+            )}
           </div>
         )}
       </div>

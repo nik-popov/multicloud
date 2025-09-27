@@ -2,7 +2,7 @@
 import {cn} from '@/lib/utils';
 import {VideoPlayer} from './video-player';
 import {ArrowLeft, ChevronDown} from 'lucide-react';
-import {useMemo, useEffect, useRef} from 'react';
+import {useMemo, useEffect, useRef, useState} from 'react';
 import {Card, CardHeader, CardTitle, CardContent} from './ui/card';
 import {Button} from './ui/button';
 import { Separator } from './ui/separator';
@@ -18,6 +18,8 @@ type VideoGridProps = {
   onBackToGrid?: () => void;
   favorites: string[];
   onToggleFavorite: (url: string) => void;
+  onFocusViewChange?: (isFocusView: boolean) => void;
+  controls?: React.ReactNode;
 };
 
 export function VideoGrid({
@@ -31,12 +33,29 @@ export function VideoGrid({
   onBackToGrid = () => {},
   favorites,
   onToggleFavorite,
+  onFocusViewChange,
+  controls,
 }: VideoGridProps) {
-  const isGridView = view === 'grid';
+  const [currentView, setCurrentView] = useState(view);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    setCurrentView(view);
+    onFocusViewChange?.(view === 'focus');
+  }, [view, onFocusViewChange]);
+
+  const handleSelectVideo = (url: string) => {
+    onSelectVideo(url);
+    setCurrentView('focus');
+  };
+
+  const handleBackToGrid = () => {
+    onBackToGrid();
+    setCurrentView('grid');
+  }
+
   const orderedUrls = useMemo(() => {
-    if (!selectedUrl || isGridView) return urls;
+    if (!selectedUrl || currentView === 'grid') return urls;
     const newUrls = [...urls];
     const index = newUrls.indexOf(selectedUrl);
     if (index > -1) {
@@ -44,14 +63,14 @@ export function VideoGrid({
       newUrls.unshift(item);
     }
     return newUrls;
-  }, [selectedUrl, urls, isGridView]);
+  }, [selectedUrl, urls, currentView]);
 
   useEffect(() => {
-    if (view === 'focus' && selectedUrl) {
+    if (currentView === 'focus' && selectedUrl) {
       const element = document.getElementById(`video-wrapper-${selectedUrl}`);
       element?.scrollIntoView({behavior: 'smooth', block: 'start'});
     }
-  }, [view, selectedUrl]);
+  }, [currentView, selectedUrl]);
 
   const currentBatchTimestamp =
     history.find(batch => JSON.stringify(batch.urls) === JSON.stringify(urls))
@@ -69,18 +88,21 @@ export function VideoGrid({
     }
   };
   
-  if (view === 'focus') {
+  if (currentView === 'focus') {
     return (
-      <div className="relative h-screen">
+      <div className="fixed inset-0 bg-black z-50">
         <Button
             variant="secondary"
-            onClick={onBackToGrid}
-            className="fixed top-24 left-4 z-50"
+            onClick={handleBackToGrid}
+            className="fixed top-4 left-4 z-[60]"
             aria-label="Back to grid"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Grid
         </Button>
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] w-[200px]">
+          {controls}
+        </div>
         <div
           ref={scrollContainerRef}
           data-focus-view-container
@@ -90,7 +112,7 @@ export function VideoGrid({
             <div
               key={url}
               id={`video-wrapper-${url}`}
-              className='snap-start h-full w-full flex items-center justify-center p-4'
+              className='snap-start h-full w-full flex items-center justify-center'
             >
               <VideoPlayer
                 src={url}
@@ -104,7 +126,7 @@ export function VideoGrid({
         {urls.length > 1 && (
           <div
             onClick={handleScrollDown}
-            className="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white z-10 cursor-pointer"
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white z-[60] cursor-pointer"
           >
             <span className="text-sm uppercase tracking-widest">Scroll</span>
             <ChevronDown className="animate-bounce h-6 w-6" />
@@ -130,7 +152,7 @@ export function VideoGrid({
           >
             <VideoPlayer
               src={url}
-              onClick={() => onSelectVideo(url)}
+              onClick={() => handleSelectVideo(url)}
               isFocusView={false}
               isLiked={favorites.includes(url)}
               onToggleLike={() => onToggleFavorite(url)}
@@ -138,7 +160,7 @@ export function VideoGrid({
           </div>
         ))}
       </div>
-      {otherHistory.length > 0 && isGridView && (
+      {otherHistory.length > 0 && currentView === 'grid' && (
         <div className="mt-16 text-center">
             <Separator className="my-8" />
             <h3 className="text-xl font-semibold mb-2">

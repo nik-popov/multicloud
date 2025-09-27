@@ -12,6 +12,7 @@ export default function Home() {
   const [currentUrls, setCurrentUrls] = useState<string[] | undefined>(undefined);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'main' | 'favorites'>('main');
+  const [focusViewActive, setFocusViewActive] = useState(false);
 
   useEffect(() => {
     const storedFavorites = localStorage.getItem('bulkshorts_favorites');
@@ -40,6 +41,7 @@ export default function Home() {
     setShowProcessor(false);
     setCurrentUrls(undefined);
     setViewMode('main');
+    setFocusViewActive(false);
   };
   
   const loadBatchFromHistory = (urls: string[]) => {
@@ -48,6 +50,7 @@ export default function Home() {
       setShowProcessor(true);
     }
     setViewMode('main');
+    setFocusViewActive(false);
   }
 
   const showFavorites = () => {
@@ -55,6 +58,7 @@ export default function Home() {
       setCurrentUrls(favorites);
       setShowProcessor(true);
       setViewMode('favorites');
+      setFocusViewActive(false);
     }
   }
 
@@ -67,6 +71,7 @@ export default function Home() {
                 urls={favorites}
                 favorites={favorites}
                 onToggleFavorite={handleToggleFavorite}
+                onFocusViewChange={setFocusViewActive}
               />
         </div>
       );
@@ -82,6 +87,7 @@ export default function Home() {
           loadBatch={loadBatchFromHistory}
           favorites={favorites}
           onToggleFavorite={handleToggleFavorite}
+          onFocusViewChange={setFocusViewActive}
         />
       </div>
     );
@@ -89,37 +95,39 @@ export default function Home() {
 
   return (
       <div className="flex flex-col h-screen">
-        <header className="flex items-center justify-between p-4 border-b shrink-0">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold tracking-tight text-primary">
-              bulkshorts
-            </h1>
-            <Button variant="secondary" onClick={handleNewBatch}>
-              New Batch
-            </Button>
-            <Button variant="outline" onClick={showFavorites} disabled={favorites.length === 0}>
-                <Heart className="mr-2" />
-                Collection ({favorites.length})
-            </Button>
-          </div>
-          <div className="flex items-center gap-2">
-            <p className="text-sm text-muted-foreground hidden sm:block">
-              Sources:
-            </p>
-            <Button variant="outline" disabled>
-              Reddit
-            </Button>
-            <Button variant="outline" disabled>
-              X
-            </Button>
-            <Button variant="outline" disabled>
-              IG
-            </Button>
-            <Button variant="outline" disabled>
-              YouTube
-            </Button>
-          </div>
-        </header>
+        {!focusViewActive && (
+          <header className="flex items-center justify-between p-4 border-b shrink-0">
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold tracking-tight text-primary">
+                bulkshorts
+              </h1>
+              <Button variant="secondary" onClick={handleNewBatch}>
+                New Batch
+              </Button>
+              <Button variant="outline" onClick={showFavorites} disabled={favorites.length === 0}>
+                  <Heart className="mr-2" />
+                  Collection ({favorites.length})
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-muted-foreground hidden sm:block">
+                Sources:
+              </p>
+              <Button variant="outline" disabled>
+                Reddit
+              </Button>
+              <Button variant="outline" disabled>
+                X
+              </Button>
+              <Button variant="outline" disabled>
+                IG
+              </Button>
+              <Button variant="outline" disabled>
+                YouTube
+              </Button>
+            </div>
+          </header>
+        )}
 
         <main className="flex-grow overflow-y-auto">
           {renderContent()}
