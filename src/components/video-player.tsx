@@ -99,72 +99,76 @@ export function VideoPlayer({
        </div>
     );
   }
+  
+  const videoElement = (
+    <Card
+      className={cn(
+        'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl',
+        isFocusView
+          ? 'bg-black w-auto h-full'
+          : 'cursor-pointer hover:scale-105 w-full bg-card h-full'
+      )}
+      style={{aspectRatio: isFocusView ? aspectRatio : '9/16'}}
+      onClick={!isFocusView ? onClick : undefined}
+      onDoubleClick={handleDoubleClick}
+    >
+      <CardContent className="p-0 h-full">
+        <div
+          className={cn(
+            'relative w-full bg-black rounded-lg overflow-hidden h-full'
+          )}
+          onMouseMove={isFocusView ? handleMouseMove : undefined}
+        >
+          <video
+            ref={videoRef}
+            src={src}
+            className={cn(
+              'w-full h-full',
+              isFocusView ? 'object-contain' : 'object-cover'
+            )}
+            autoPlay
+            loop
+            muted
+            playsInline
+            onLoadedMetadata={handleLoadedMetadata}
+          />
+          {showHeart && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <Heart className="h-24 w-24 text-white/90 animate-in fade-in zoom-in-125 fill-red-500/80 duration-500" />
+            </div>
+          )}
+            {isLiked && !isFocusView && (
+            <div className="absolute top-2 right-2 pointer-events-none">
+              <Heart className="h-6 w-6 text-red-500 fill-red-500" />
+            </div>
+          )}
+          {isFocusView && (
+            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center text-white/70 text-xs font-semibold animate-pulse group-hover:opacity-0 transition-opacity">
+              <MousePointer className="h-4 w-4 mr-2" />
+              <span>Move mouse to scrub video</span>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  if (!isFocusView) {
+    return (
+      <div className="w-full h-full relative group flex items-center justify-center">
+        {videoElement}
+      </div>
+    );
+  }
 
   return (
-    <div 
-      className="w-full h-full relative group flex items-center justify-center" 
-      ref={containerRef}
-    >
-      <div className={cn("flex items-center justify-center w-auto", isFocusView ? 'h-full' : 'w-full')}>
-        <Card
-          className={cn(
-            'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl h-full',
-            isFocusView
-              ? 'bg-black w-auto'
-              : 'cursor-pointer hover:scale-105 w-full bg-card'
-          )}
-          style={{aspectRatio: isFocusView ? aspectRatio : '9/16'}}
-          onClick={!isFocusView ? onClick : undefined}
-          onDoubleClick={handleDoubleClick}
-        >
-          <CardContent className="p-0 h-full">
-            <div
-              className={cn(
-                'relative w-full bg-black rounded-lg overflow-hidden h-full'
-              )}
-              onMouseMove={isFocusView ? handleMouseMove : undefined}
-            >
-              <video
-                ref={videoRef}
-                src={src}
-                className={cn(
-                  'w-full h-full',
-                  isFocusView ? 'object-contain' : 'object-cover'
-                )}
-                style={{
-                  aspectRatio: isFocusView
-                    ? aspectRatio
-                    : '9 / 16',
-                }}
-                autoPlay
-                loop
-                muted
-                playsInline
-                onLoadedMetadata={handleLoadedMetadata}
-              />
-              {showHeart && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <Heart className="h-24 w-24 text-white/90 animate-in fade-in zoom-in-125 fill-red-500/80 duration-500" />
-                </div>
-              )}
-               {isLiked && !isFocusView && (
-                <div className="absolute top-2 right-2 pointer-events-none">
-                  <Heart className="h-6 w-6 text-red-500 fill-red-500" />
-                </div>
-              )}
-              {isFocusView && (
-                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center text-white/70 text-xs font-semibold animate-pulse group-hover:opacity-0 transition-opacity">
-                  <MousePointer className="h-4 w-4 mr-2" />
-                  <span>Move mouse to scrub video</span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="flex items-center justify-center gap-4 h-full" ref={containerRef}>
+      {/* Empty div for left controls spacing, for now */}
+      <div className="w-[200px]" />
       
-      {isFocusView && (
-        <div className="absolute left-full w-[200px] flex flex-col items-center gap-4 p-4">
+      {videoElement}
+      
+      <div className="w-[200px] flex flex-col items-center gap-4">
           <div className="text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm w-full">
             <p className="font-bold">@creatorname</p>
             <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
@@ -184,7 +188,7 @@ export function VideoPlayer({
           >
             <Library className="h-6 w-6" />
           </Button>
-           <Button
+            <Button
             variant="ghost"
             size="icon"
             onClick={handleFullscreen}
@@ -215,7 +219,6 @@ export function VideoPlayer({
             </div>
           </div>
         </div>
-      )}
     </div>
   );
 }

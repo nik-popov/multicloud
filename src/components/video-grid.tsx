@@ -71,7 +71,7 @@ export function VideoGrid({
   
   if (view === 'focus') {
     return (
-      <div className="relative">
+      <div className="relative h-screen">
         <Button
             variant="secondary"
             onClick={onBackToGrid}
@@ -84,13 +84,13 @@ export function VideoGrid({
         <div
           ref={scrollContainerRef}
           data-focus-view-container
-          className="flex flex-col items-center snap-y snap-mandatory h-screen overflow-y-scroll"
+          className="flex flex-col items-center snap-y snap-mandatory h-full overflow-y-scroll"
         >
           {orderedUrls.map(url => (
             <div
               key={url}
               id={`video-wrapper-${url}`}
-              className='snap-start h-screen w-full flex items-center justify-center'
+              className='snap-start h-full w-full flex items-center justify-center p-4'
             >
               <VideoPlayer
                 src={url}
