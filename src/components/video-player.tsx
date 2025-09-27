@@ -9,7 +9,6 @@ import { useRef, useState, useEffect } from 'react';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 type VideoPlayerProps = {
   src: string;
@@ -30,8 +29,6 @@ export function VideoPlayer({
   const [showHeart, setShowHeart] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const placeholderImage = PlaceHolderImages.find(p => p.id === 'video-placeholder');
-
 
   useEffect(() => {
     if (videoRef.current) {
@@ -154,7 +151,6 @@ export function VideoPlayer({
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
-            poster={placeholderImage?.imageUrl}
           />
           {!isPlaying && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -300,5 +296,3 @@ export function VideoPlayer({
     </div>
   );
 }
-
-    
