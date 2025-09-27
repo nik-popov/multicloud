@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { getFavorites } from '@/lib/firestore';
 import { Heart, Loader2 } from 'lucide-react';
 import { VideoCard } from '@/components/video-card';
