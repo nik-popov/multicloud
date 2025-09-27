@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Library, MousePointer, Fullscreen } from 'lucide-react';
+import { Heart, Library, MousePointer, Fullscreen, Play, Pause } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useRef, useState, useEffect } from 'react';
@@ -30,6 +30,7 @@ export function VideoPlayer({
   const [aspectRatio, setAspectRatio] = useState('9/16');
   const [showHeart, setShowHeart] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -85,6 +86,22 @@ export function VideoPlayer({
     }
   };
 
+  const handleVideoClick = () => {
+    if (!isFocusView) {
+      onClick?.();
+      return;
+    }
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
   if (isHistoryCard) {
     return (
        <div className="w-full h-full">
@@ -109,7 +126,7 @@ export function VideoPlayer({
           : 'cursor-pointer hover:scale-105 w-full bg-card h-full'
       )}
       style={{aspectRatio: isFocusView ? aspectRatio : '9/16'}}
-      onClick={!isFocusView ? onClick : undefined}
+      onClick={handleVideoClick}
       onDoubleClick={handleDoubleClick}
     >
       <CardContent className="p-0 h-full">
@@ -132,6 +149,13 @@ export function VideoPlayer({
             playsInline
             onLoadedMetadata={handleLoadedMetadata}
           />
+          {!isPlaying && isFocusView && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="bg-black/50 rounded-full p-4">
+                    <Play className="h-12 w-12 text-white fill-white" />
+                </div>
+            </div>
+          )}
           {showHeart && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <Heart className="h-24 w-24 text-white/90 animate-in fade-in zoom-in-125 fill-red-500/80 duration-500" />
