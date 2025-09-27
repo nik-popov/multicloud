@@ -1,8 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Send } from 'lucide-react';
-import { Input } from './ui/input';
+import { Heart } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useRef, useState, useEffect } from 'react';
@@ -90,23 +89,16 @@ export function VideoPlayer({
       </Card>
       {isFocusView && (
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-4">
-          <div className="flex items-center gap-2">
-            <Input
-              type="text"
-              placeholder="Add a comment... 😃"
-              className="bg-white/10 text-white border-white/20 placeholder:text-gray-300 focus:ring-primary backdrop-blur-sm"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:text-primary drop-shadow-lg flex-shrink-0"
-            >
-              <Send className="h-5 w-5" />
-            </Button>
+          <div className="flex items-center gap-2 text-white">
+            <p className="font-bold">@creator</p>
+            <p>Video description...</p>
           </div>
           <div className="w-full text-white space-y-2">
             <div className="flex items-center gap-4 text-sm">
-              <Label htmlFor="speed-control" className="text-white/80">
+              <Label
+                htmlFor="speed-control"
+                className="text-white/80 flex-shrink-0"
+              >
                 Speed
               </Label>
               <Slider
