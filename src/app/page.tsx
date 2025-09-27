@@ -1,15 +1,17 @@
-
 'use client';
 
-import { UrlProcessor } from '@/components/url-processor';
-import { Button } from '@/components/ui/button';
-import { VideoGrid } from '@/components/video-grid';
-import { Heart } from 'lucide-react';
+import {Button} from '@/components/ui/button';
+import {VideoGrid} from '@/components/video-grid';
+import {Heart, Search} from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import {useEffect, useState} from 'react';
+import {useRouter, useSearchParams} from 'next/navigation';
 
-import { useIsMobile } from '@/hooks/use-mobile';
-
+import {useIsMobile} from '@/hooks/use-mobile';
+import {Input} from '@/components/ui/input';
+import {Card} from '@/components/ui/card';
+import {VideoCard} from '@/components/video-card';
+import {Loader2} from 'lucide-react';
 
 export default function Home() {
   const [currentUrls, setCurrentUrls] = useState<string[]>([]);
@@ -17,13 +19,47 @@ export default function Home() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'main' | 'favorites'>('main');
   const [focusViewActive, setFocusViewActive] = useState(false);
-  const [selectedUrlForFocus, setSelectedUrlForFocus] = useState<string | null>(null);
+  const [selectedUrlForFocus, setSelectedUrlForFocus] = useState<string | null>(
+    null
+  );
   const isMobile = useIsMobile();
   const [gridSize, setGridSize] = useState(3);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(5);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingProgress, setProcessingProgress] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const urlsParam = searchParams.get('urls');
+    if (urlsParam) {
+      try {
+        const decodedUrls = JSON.parse(decodeURIComponent(urlsParam));
+        setCurrentUrls(decodedUrls);
+        if (decodedUrls.length > 0) {
+          const newBatch = {
+            timestamp: new Date().toISOString(),
+            urls: decodedUrls,
+          };
+          // Avoid adding duplicates to history
+          setHistory(prevHistory => {
+            const updatedHistory = [newBatch, ...prevHistory].slice(0, 50); // Limit history size
+            localStorage.setItem(
+              'bulkshorts_history',
+              JSON.stringify(updatedHistory)
+            );
+            return updatedHistory;
+          });
+        }
+        // Remove URL params after processing
+        router.replace('/', undefined);
+      } catch (e) {
+        console.error('Failed to parse URLs from query param', e);
+        router.replace('/', undefined);
+      }
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     const storedFavorites = localStorage.getItem('bulkshorts_favorites');
@@ -34,6 +70,7 @@ export default function Home() {
     if (storedHistory) {
       setHistory(JSON.parse(storedHistory));
     }
+    setIsLoading(false);
   }, []);
 
   const handleToggleFavorite = (url: string) => {
@@ -41,52 +78,33 @@ export default function Home() {
       const newFavorites = prev.includes(url)
         ? prev.filter(u => u !== url)
         : [...prev, url];
-      localStorage.setItem('bulkshorts_favorites', JSON.stringify(newFavorites));
+      localStorage.setItem(
+        'bulkshorts_favorites',
+        JSON.stringify(newFavorites)
+      );
       if (viewMode === 'favorites' && !newFavorites.includes(url)) {
         setCurrentUrls(newFavorites);
       }
       return newFavorites;
     });
-  }
-  
-  const handleProcessStart = () => {
-    setIsProcessing(true);
-    setProcessingProgress(0);
-    setCurrentUrls([]);
-    setViewMode('main');
-    setSelectedUrlForFocus(null);
-  };
-  
-  const handleProcessComplete = (processedUrls: string[]) => {
-    setCurrentUrls(processedUrls);
-    setIsProcessing(false);
-    
-    if (processedUrls.length > 0) {
-      const newBatch = {
-        timestamp: new Date().toISOString(),
-        urls: processedUrls
-      };
-      const updatedHistory = [newBatch, ...history].slice(0, 50); // Limit history size
-      setHistory(updatedHistory);
-      localStorage.setItem('bulkshorts_history', JSON.stringify(updatedHistory));
-    }
   };
 
   const handleNewBatch = () => {
-    setCurrentUrls([]);
-    setViewMode('main');
-    setFocusViewActive(false);
-    setSelectedUrlForFocus(null);
-    setIsProcessing(false);
+    router.push('/discover');
   };
-  
+
   const loadBatchFromHistory = (urls: string[]) => {
-    setCurrentUrls(prevUrls => [...prevUrls, ...urls]);
+    setCurrentUrls(prevUrls => {
+      // Simple check to avoid prepending the same batch multiple times
+      if (JSON.stringify(prevUrls.slice(0, urls.length)) === JSON.stringify(urls)) {
+        return prevUrls;
+      }
+      return [...urls, ...prevUrls]
+    });
     setViewMode('main');
     setFocusViewActive(false);
     setSelectedUrlForFocus(null);
-    setIsProcessing(false);
-  }
+  };
 
   const showFavorites = () => {
     if (favorites.length > 0) {
@@ -94,35 +112,29 @@ export default function Home() {
       setViewMode('favorites');
       setFocusViewActive(false);
       setSelectedUrlForFocus(null);
-      setIsProcessing(false);
     }
-  }
+  };
 
   const handleSelectVideoForFocus = (url: string) => {
-    const urlsForFocus = viewMode === 'favorites' ? favorites : currentUrls ?? [];
+    const urlsForFocus =
+      viewMode === 'favorites' ? favorites : currentUrls ?? [];
     setCurrentUrls(urlsForFocus);
     setSelectedUrlForFocus(url);
   };
-  
+
   const handleBackToGrid = () => {
     setSelectedUrlForFocus(null);
-  }
+  };
 
   const renderContent = () => {
-    if (isProcessing) {
-      return (
-        <UrlProcessor
-            onProcessStart={handleProcessStart}
-            onProcessComplete={handleProcessComplete}
-            onProgress={setProcessingProgress}
-            isProcessing={isProcessing}
-            processingProgress={processingProgress}
-            history={history}
-            loadBatch={(urls: string[]) => {
-              setCurrentUrls(urls);
-              setIsProcessing(false);
-            }}
-          />
+    if (isLoading) {
+       return (
+        <div className="flex flex-col items-center justify-center h-full pt-20">
+          <div className="text-center w-full max-w-md mx-auto space-y-4">
+            <Loader2 className="mr-2 h-8 w-8 animate-spin inline-block" />
+            <p>Loading your space...</p>
+          </div>
+        </div>
       );
     }
 
@@ -131,82 +143,111 @@ export default function Home() {
 
       return (
         <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
-            {viewMode === 'favorites' && <h2 className="text-3xl font-bold text-center mb-8">My Collection</h2>}
-            <VideoGrid
-                urls={urlsForGrid}
-                favorites={favorites}
-                onToggleFavorite={handleToggleFavorite}
-                onFocusViewChange={setFocusViewActive}
-                onSelectVideo={handleSelectVideoForFocus}
-                selectedUrl={selectedUrlForFocus}
-                onBackToGrid={handleBackToGrid}
-                viewMode={viewMode}
-                gridSize={gridSize}
-                setGridSize={setGridSize}
-                isAutoScrolling={isAutoScrolling}
-                setIsAutoScrolling={setIsAutoScrolling}
-                scrollSpeed={scrollSpeed}
-                setScrollSpeed={setScrollSpeed}
-                history={history}
-                loadBatch={loadBatchFromHistory}
-              />
+          {viewMode === 'favorites' && (
+            <h2 className="text-3xl font-bold text-center mb-8">
+              My Collection
+            </h2>
+          )}
+          <VideoGrid
+            urls={urlsForGrid}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
+            onFocusViewChange={setFocusViewActive}
+            onSelectVideo={handleSelectVideoForFocus}
+            selectedUrl={selectedUrlForFocus}
+            onBackToGrid={handleBackToGrid}
+            viewMode={viewMode}
+            gridSize={gridSize}
+            setGridSize={setGridSize}
+            isAutoScrolling={isAutoScrolling}
+            setIsAutoScrolling={setIsAutoScrolling}
+            scrollSpeed={scrollSpeed}
+            setScrollSpeed={setScrollSpeed}
+            history={history}
+            loadBatch={loadBatchFromHistory}
+          />
         </div>
       );
     }
 
     return (
-       <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
-          <UrlProcessor
-            onProcessStart={handleProcessStart}
-            onProcessComplete={handleProcessComplete}
-            onProgress={setProcessingProgress}
-            isProcessing={isProcessing}
-            processingProgress={processingProgress}
-            history={history}
-            loadBatch={(urls: string[]) => {
-              setCurrentUrls(urls);
-              setIsProcessing(false);
-            }}
-          />
-       </div>
+      <div className="container mx-auto max-w-3xl p-4 sm:p-6 lg:p-8 space-y-8">
+        <div className="text-center">
+            <h1 className="text-4xl font-bold tracking-tight text-primary">bulkshorts</h1>
+            <p className="text-muted-foreground mt-2">The fastest way to discover and browse short-form video content.</p>
+        </div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input placeholder="Search your history..." className="pl-10" />
+        </div>
+
+        {history.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-center">History</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {history.map((batch, index) => (
+                <div
+                  key={index}
+                  className="group relative overflow-hidden rounded-lg shadow-lg cursor-pointer transition-transform duration-300 ease-in-out hover:scale-105"
+                  onClick={() => loadBatchFromHistory(batch.urls)}
+                >
+                  <div className="absolute inset-0 bg-black/50 transition-opacity duration-300 group-hover:bg-black/20 z-10" />
+                  <div className="absolute bottom-0 left-0 p-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <h3 className="font-bold text-white text-lg">
+                      {new Date(batch.timestamp).toLocaleDateString()}
+                    </h3>
+                    <p className="text-white/80 text-sm">
+                      {batch.urls.length} videos
+                    </p>
+                  </div>
+                  <VideoCard src={batch.urls[0]} isHistoryCard={true} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     );
-  }
+  };
 
   return (
-      <div className="flex flex-col h-screen">
-        {!focusViewActive && (
-          <header className="flex items-center justify-between p-4 border-b shrink-0">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold tracking-tight text-primary cursor-pointer" onClick={handleNewBatch}>
-                bulkshorts
-              </h1>
-            </div>
-             <div className="flex items-center gap-2">
-                {!isMobile && (
-                  <Button variant="secondary" onClick={handleNewBatch}>
-                    New Batch
-                  </Button>
-                )}
-                <Button variant="outline" onClick={showFavorites} disabled={favorites.length === 0}>
-                    <Heart className="mr-2" />
-                    Collection ({favorites.length})
-                </Button>
-            </div>
-          </header>
-        )}
+    <div className="flex flex-col h-screen">
+      {!focusViewActive && (
+        <header className="flex items-center justify-between p-4 border-b shrink-0">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-2xl font-bold tracking-tight text-primary cursor-pointer">
+              bulkshorts
+            </Link>
+          </div>
+          <div className="flex items-center gap-2">
+            {!isMobile && (
+              <Button variant="secondary" onClick={handleNewBatch}>
+                New Batch
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={showFavorites}
+              disabled={favorites.length === 0}
+            >
+              <Heart className="mr-2" />
+              Collection ({favorites.length})
+            </Button>
+          </div>
+        </header>
+      )}
 
-        <main className="flex-grow overflow-y-auto">
-          {renderContent()}
-          {!focusViewActive && !isProcessing && currentUrls.length === 0 && (
-            <footer className="flex items-center justify-center p-4 border-t">
-              <div className="flex items-center gap-4">
-                <Button variant="outline" asChild>
-                  <Link href="https://x.com" target="_blank">X</Link>
-                </Button>
-              </div>
-            </footer>
-          )}
-        </main>
-      </div>
+      <main className="flex-grow overflow-y-auto">{renderContent()}</main>
+      
+      {!focusViewActive && currentUrls.length === 0 && (
+          <footer className="flex items-center justify-center p-4 border-t">
+            <div className="flex items-center gap-4">
+              <Button variant="outline" asChild>
+                <Link href="https://x.com" target="_blank">X</Link>
+              </Button>
+            </div>
+          </footer>
+        )}
+    </div>
   );
 }
