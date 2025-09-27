@@ -78,7 +78,6 @@ function HomePageContent() {
 
   useEffect(() => {
     async function loadUserData() {
-      setIsLoading(true);
       if (user) {
         await migrateFavorites(user.uid);
         await migrateHistory(user.uid);
@@ -157,7 +156,7 @@ function HomePageContent() {
   };
 
   const renderContent = () => {
-    if (isLoading) {
+    if (isLoading && currentUrls.length === 0) {
        return (
         <div className="flex flex-col items-center justify-center h-full pt-20">
           <div className="text-center w-full max-w-md mx-auto space-y-4">
@@ -197,7 +196,7 @@ function HomePageContent() {
     const recommendedItems = history.slice(0, 6);
 
     return (
-      <div className="container mx-auto max-w-3xl p-4 sm:p-6 lg:p-8 space-y-8">
+      <div className="container mx-auto max-w-4xl p-4 sm:p-6 lg:p-8 space-y-8">
         <div className="text-center">
             <h1 className="text-4xl font-bold tracking-tight text-primary">bulkshorts</h1>
             <p className="text-muted-foreground mt-2">The fastest way to discover and browse short-form video content.</p>
@@ -210,7 +209,7 @@ function HomePageContent() {
         {recommendedItems.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-center">Recommended</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {recommendedItems.map((batch, index) => (
                 <div
                   key={`rec-${index}`}
@@ -236,7 +235,7 @@ function HomePageContent() {
         {history.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-center">History</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {history.map((batch, index) => (
                 <div
                   key={index}
@@ -310,7 +309,7 @@ function HomePageContent() {
           <footer className="flex items-center justify-center p-4 border-t">
             <div className="flex items-center gap-4">
               <Button variant="outline" asChild>
-                <Link href="https://x.com" target="_blank">X</Link>
+                <Link href="/discover">Create a New Batch</Link>
               </Button>
             </div>
           </footer>

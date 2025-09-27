@@ -23,12 +23,17 @@ export function VideoCard({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          videoRef.current?.play().catch(() => {});
+          video.play().catch(() => {
+            // Autoplay was prevented.
+          });
         } else {
-          videoRef.current?.pause();
+          video.pause();
         }
       },
       {
@@ -41,24 +46,23 @@ export function VideoCard({
       observer.observe(currentRef);
     }
 
+    // Special handling for history cards to attempt play on mount
+    if (isHistoryCard) {
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Autoplay was prevented.
+          });
+        }
+    }
+
+
     return () => {
       if (currentRef) {
         observer.unobserve(currentRef);
       }
     };
-  }, []);
-  
-  useEffect(() => {
-    if (isHistoryCard && videoRef.current) {
-       const playPromise = videoRef.current.play();
-       if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Autoplay was prevented.
-        });
-       }
-    }
   }, [isHistoryCard]);
-
 
   return (
     <div
