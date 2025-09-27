@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Library, MousePointer } from 'lucide-react';
+import { Heart, Library, MousePointer, Fullscreen } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useRef, useState, useEffect } from 'react';
@@ -73,6 +73,14 @@ export function VideoPlayer({
     setIsLiked(!isLiked);
   }
 
+  const handleFullscreen = () => {
+    if (videoRef.current) {
+      if (videoRef.current.requestFullscreen) {
+        videoRef.current.requestFullscreen();
+      }
+    }
+  };
+
   return (
     <div 
       className="w-full h-full relative group flex items-center justify-center" 
@@ -80,56 +88,58 @@ export function VideoPlayer({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <Card
-        className={cn(
-          'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl h-full',
-          isFocusView
-            ? 'bg-black w-auto'
-            : 'cursor-pointer hover:scale-105 w-full'
-        )}
-        style={isFocusView ? {aspectRatio: aspectRatio} : {aspectRatio: '9/16'}}
-        onClick={!isFocusView ? onClick : undefined}
-        onDoubleClick={handleDoubleClick}
-      >
-        <CardContent className="p-0 h-full">
-          <div
-            className={cn(
-              'relative w-full bg-black rounded-lg overflow-hidden h-full'
-            )}
-            onMouseMove={isFocusView ? handleMouseMove : undefined}
-          >
-            <video
-              ref={videoRef}
-              src={src}
+      <div className={cn("flex items-center justify-center", isFocusView ? "w-auto max-w-sm" : "w-full h-full")}>
+        <Card
+          className={cn(
+            'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl h-full',
+            isFocusView
+              ? 'bg-black w-full'
+              : 'cursor-pointer hover:scale-105 w-full'
+          )}
+          style={{aspectRatio: isFocusView ? aspectRatio : '9/16'}}
+          onClick={!isFocusView ? onClick : undefined}
+          onDoubleClick={handleDoubleClick}
+        >
+          <CardContent className="p-0 h-full">
+            <div
               className={cn(
-                'w-full h-full',
-                isFocusView ? 'object-contain' : 'object-cover'
+                'relative w-full bg-black rounded-lg overflow-hidden h-full'
               )}
-              style={{
-                aspectRatio: isFocusView
-                  ? aspectRatio
-                  : '9 / 16',
-              }}
-              autoPlay
-              loop
-              muted
-              playsInline
-              onLoadedMetadata={handleLoadedMetadata}
-            />
-             {showHeart && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <Heart className="h-24 w-24 text-white/90 animate-in fade-in zoom-in-125 fill-red-500/80 duration-500" />
-              </div>
-            )}
-            {isFocusView && (
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center text-white/70 text-xs font-semibold animate-pulse group-hover:opacity-0 transition-opacity">
-                <MousePointer className="h-4 w-4 mr-2" />
-                <span>Move mouse to scrub video</span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              onMouseMove={isFocusView ? handleMouseMove : undefined}
+            >
+              <video
+                ref={videoRef}
+                src={src}
+                className={cn(
+                  'w-full h-full',
+                  isFocusView ? 'object-contain' : 'object-cover'
+                )}
+                style={{
+                  aspectRatio: isFocusView
+                    ? aspectRatio
+                    : '9 / 16',
+                }}
+                autoPlay
+                loop
+                muted
+                playsInline
+                onLoadedMetadata={handleLoadedMetadata}
+              />
+              {showHeart && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <Heart className="h-24 w-24 text-white/90 animate-in fade-in zoom-in-125 fill-red-500/80 duration-500" />
+                </div>
+              )}
+              {isFocusView && (
+                <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center text-white/70 text-xs font-semibold animate-pulse group-hover:opacity-0 transition-opacity">
+                  <MousePointer className="h-4 w-4 mr-2" />
+                  <span>Move mouse to scrub video</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       
       {isFocusView && (
         <div className="absolute left-full ml-4 w-[200px] flex flex-col items-center gap-4 p-4">
@@ -151,6 +161,14 @@ export function VideoPlayer({
             className="text-white hover:text-primary hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
           >
             <Library className="h-6 w-6" />
+          </Button>
+           <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleFullscreen}
+            className="text-white hover:text-primary hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+          >
+            <Fullscreen className="h-6 w-6" />
           </Button>
           <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
             <div className="flex flex-col items-center gap-2 text-sm">
