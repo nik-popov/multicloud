@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { UrlProcessor } from '@/components/url-processor';
@@ -7,9 +8,11 @@ import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Suspense } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 
 function DiscoverPageContent() {
   const isMobile = useIsMobile();
+  const {user, loading} = useAuth();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -25,10 +28,22 @@ function DiscoverPageContent() {
                 <Link href="/discover">New Batch</Link>
               </Button>
             )}
-            <Button variant="outline" disabled>
-                <Heart className="mr-2" />
-                Favorites (0)
-            </Button>
+             {user && !loading ? (
+              <>
+                <Button variant="outline" asChild>
+                    <Link href="/account">Account</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                    <Link href="/login">Log In</Link>
+                </Button>
+                <Button asChild>
+                    <Link href="/signup">Sign Up</Link>
+                </Button>
+              </>
+            )}
         </div>
       </header>
       <main className="flex-grow flex items-center justify-center p-4">

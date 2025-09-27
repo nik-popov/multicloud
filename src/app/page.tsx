@@ -13,11 +13,13 @@ import {Input} from '@/components/ui/input';
 import {Card} from '@/components/ui/card';
 import {VideoCard} from '@/components/video-card';
 import {Loader2} from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
+import { getFavorites, saveFavorites, migrateFavorites } from '@/lib/firestore';
 
 export default function Home() {
   const [currentUrls, setCurrentUrls] = useState<string[]>([]);
   const [history, setHistory] = useState<any[]>([]);
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavoritesState] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'main' | 'favorites'>('main');
   const [focusViewActive, setFocusViewActive] = useState(false);
   const [selectedUrlForFocus, setSelectedUrlForFocus] = useState<string | null>(
@@ -31,6 +33,8 @@ export default function Home() {
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
+
 
   useEffect(() => {
     const urlsParam = searchParams.get('urls');
@@ -70,26 +74,51 @@ export default function Home() {
   }, [searchParams]);
 
   useEffect(() => {
-    const storedFavorites = localStorage.getItem('bulkshorts_favorites');
-    if (storedFavorites) {
-      setFavorites(JSON.parse(storedFavorites));
+    async function loadData() {
+      setIsLoading(true);
+
+      // Migrate favorites if user just logged in
+      if (user) {
+        await migrateFavorites(user.uid);
+      }
+      
+      const storedHistory = localStorage.getItem('bulkshorts_history');
+      if (storedHistory) {
+        setHistory(JSON.parse(storedHistory));
+      }
+
+      if (user) {
+        const dbFavorites = await getFavorites(user.uid);
+        setFavoritesState(dbFavorites);
+      } else {
+        const storedFavorites = localStorage.getItem('bulkshorts_favorites');
+        if (storedFavorites) {
+          setFavoritesState(JSON.parse(storedFavorites));
+        }
+      }
+
+      setIsLoading(false);
     }
-    const storedHistory = localStorage.getItem('bulkshorts_history');
-    if (storedHistory) {
-      setHistory(JSON.parse(storedHistory));
+    if (!authLoading) {
+      loadData();
     }
-    setIsLoading(false);
-  }, []);
+  }, [user, authLoading]);
 
   const handleToggleFavorite = (url: string) => {
-    setFavorites(prev => {
+    setFavoritesState(prev => {
       const newFavorites = prev.includes(url)
         ? prev.filter(u => u !== url)
         : [...prev, url];
-      localStorage.setItem(
-        'bulkshorts_favorites',
-        JSON.stringify(newFavorites)
-      );
+      
+      if (user) {
+        saveFavorites(user.uid, newFavorites);
+      } else {
+        localStorage.setItem(
+          'bulkshorts_favorites',
+          JSON.stringify(newFavorites)
+        );
+      }
+
       if (viewMode === 'favorites' && !newFavorites.includes(url)) {
         setCurrentUrls(newFavorites);
       }
@@ -135,7 +164,7 @@ export default function Home() {
   };
 
   const renderContent = () => {
-    if (isLoading) {
+    if (isLoading || authLoading) {
        return (
         <div className="flex flex-col items-center justify-center h-full pt-20">
           <div className="text-center w-full max-w-md mx-auto space-y-4">
@@ -258,7 +287,7 @@ export default function Home() {
                 New Batch
               </Button>
             )}
-            <Button
+             <Button
               variant="outline"
               onClick={showFavorites}
               disabled={favorites.length === 0}
@@ -266,6 +295,22 @@ export default function Home() {
               <Heart className="mr-2" />
               Favorites ({favorites.length})
             </Button>
+            {user && !authLoading ? (
+              <>
+                <Button variant="outline" asChild>
+                    <Link href="/account">Account</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                    <Link href="/login">Log In</Link>
+                </Button>
+                <Button asChild>
+                    <Link href="/signup">Sign Up</Link>
+                </Button>
+              </>
+            )}
           </div>
         </header>
       )}
