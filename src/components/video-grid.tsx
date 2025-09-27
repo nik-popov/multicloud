@@ -49,7 +49,7 @@ export function VideoGrid({
           'gap-6',
           isGridView
             ? 'grid'
-            : 'flex flex-col items-center snap-y snap-mandatory h-screen overflow-y-auto'
+            : 'flex flex-col items-center snap-y snap-mandatory h-screen overflow-y-scroll'
         )}
         style={
           isGridView
