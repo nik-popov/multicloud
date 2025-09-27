@@ -205,7 +205,7 @@ export function UrlProcessor({
   };
   
   const Controls = () => (
-     <div className="flex flex-col gap-4 sticky top-4 h-min">
+     <div className="flex flex-col gap-4">
         <Card className="p-4 bg-card/80 backdrop-blur-sm">
           <CardContent className="p-0 flex flex-col items-center gap-4">
             <div className="flex items-center justify-between w-full">
@@ -373,7 +373,9 @@ export function UrlProcessor({
           <div className="space-y-4">
             {view === 'grid' ? (
                <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
-                  <Controls />
+                  <div className="sticky top-4 h-min">
+                    <Controls />
+                  </div>
                   <VideoGrid
                     urls={urls ?? []}
                     view={view}

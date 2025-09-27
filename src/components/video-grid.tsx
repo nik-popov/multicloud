@@ -91,17 +91,18 @@ export function VideoGrid({
   if (currentView === 'focus') {
     return (
       <div className="fixed inset-0 bg-black z-50">
-        <Button
-            variant="secondary"
-            onClick={handleBackToGrid}
-            className="fixed top-4 left-4 z-[60]"
-            aria-label="Back to grid"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Grid
-        </Button>
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[60] w-[200px]">
-          {controls}
+        <div className="fixed top-4 left-4 z-[60] flex flex-col gap-4">
+          <Button
+              variant="secondary"
+              onClick={handleBackToGrid}
+              aria-label="Back to grid"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Grid
+          </Button>
+          <div className='w-[200px]'>
+            {controls}
+          </div>
         </div>
         <div
           ref={scrollContainerRef}
