@@ -69,40 +69,44 @@ export default function Home() {
         console.error('Failed to parse URLs from query param', e);
         router.replace('/', undefined);
       }
+    } else {
+        const storedHistory = localStorage.getItem('bulkshorts_history');
+        if (storedHistory) {
+            setHistory(JSON.parse(storedHistory));
+        }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-
-      // Migrate favorites if user just logged in
+    async function loadUserData() {
       if (user) {
+        // Migrate local favorites to Firestore on login
         await migrateFavorites(user.uid);
-      }
-      
-      const storedHistory = localStorage.getItem('bulkshorts_history');
-      if (storedHistory) {
-        setHistory(JSON.parse(storedHistory));
-      }
-
-      if (user) {
         const dbFavorites = await getFavorites(user.uid);
         setFavoritesState(dbFavorites);
       } else {
-        const storedFavorites = localStorage.getItem('bulkshorts_favorites');
-        if (storedFavorites) {
-          setFavoritesState(JSON.parse(storedFavorites));
-        }
+        // Load favorites from local storage if logged out
+        const localFavorites = localStorage.getItem('bulkshorts_favorites');
+        setFavoritesState(localFavorites ? JSON.parse(localFavorites) : []);
       }
-
       setIsLoading(false);
     }
+    
     if (!authLoading) {
-      loadData();
+        loadUserData();
     }
   }, [user, authLoading]);
+  
+   useEffect(() => {
+    // This effect runs once on initial mount to load history and set loading state
+    const storedHistory = localStorage.getItem('bulkshorts_history');
+    if (storedHistory) {
+      setHistory(JSON.parse(storedHistory));
+    }
+    setIsLoading(authLoading); // Page is loading if auth is loading
+  }, []); // Empty dependency array ensures this runs only once
+
 
   const handleToggleFavorite = (url: string) => {
     setFavoritesState(prev => {
@@ -164,7 +168,7 @@ export default function Home() {
   };
 
   const renderContent = () => {
-    if (isLoading || authLoading) {
+    if (isLoading) {
        return (
         <div className="flex flex-col items-center justify-center h-full pt-20">
           <div className="text-center w-full max-w-md mx-auto space-y-4">
