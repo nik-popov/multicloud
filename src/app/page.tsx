@@ -4,7 +4,8 @@
 import { UrlProcessor } from '@/components/url-processor';
 import { Button } from '@/components/ui/button';
 import { VideoGrid } from '@/components/video-grid';
-import { Heart, Loader2 } from 'lucide-react';
+import { Heart } from 'lucide-react';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -201,20 +202,8 @@ export default function Home() {
         {!focusViewActive && !isProcessing && currentUrls.length === 0 && (
           <footer className="flex items-center justify-center p-4 border-t shrink-0">
             <div className="flex items-center gap-4">
-              <p className="text-sm text-muted-foreground">
-                Sources:
-              </p>
-              <Button variant="outline" disabled>
-                Reddit
-              </Button>
-              <Button variant="outline" disabled>
-                X
-              </Button>
-              <Button variant="outline" disabled>
-                IG
-              </Button>
-              <Button variant="outline" disabled>
-                YouTube
+              <Button variant="outline" asChild>
+                <Link href="https://x.com" target="_blank">X</Link>
               </Button>
             </div>
           </footer>
