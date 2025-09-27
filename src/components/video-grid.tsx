@@ -7,7 +7,7 @@ import {useMemo, useEffect, useRef} from 'react';
 import {Button} from './ui/button';
 import {Separator} from './ui/separator';
 import { VideoCard } from './video-card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 type VideoGridProps = {
   urls: string[];
@@ -24,9 +24,13 @@ type VideoGridProps = {
   viewMode?: 'main' | 'favorites';
 };
 
-const safeId = (id: string) => id.replace(/[^a-zA-Z0-9-_]/g, (match) => {
-    return `_${match.charCodeAt(0)}`;
-});
+const safeId = (id: string) => {
+    // Replace any character that is not a letter, number, hyphen, or underscore
+    return id.replace(/[^a-zA-Z0-9-_]/g, (match) => {
+        // Return the character code as a hex value, prefixed with an underscore
+        return `_${match.charCodeAt(0).toString(16)}`;
+    });
+};
 
 
 export function VideoGrid({
@@ -120,22 +124,19 @@ export function VideoGrid({
             <ArrowLeft className="h-6 w-6" />
           </Button>
 
-          <Dialog>
-            <DialogTrigger asChild>
+          <Popover>
+            <PopoverTrigger asChild>
               <Button variant="secondary" className="bg-card/50 backdrop-blur-sm">
                 <Settings className="mr-2 h-4 w-4" />
                 Advanced
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-card/80 backdrop-blur-md border-white/20">
-              <DialogHeader>
-                <DialogTitle>Advanced Controls</DialogTitle>
-              </DialogHeader>
-              <div className="py-4">
+            </PopoverTrigger>
+            <PopoverContent side="right" className="w-auto bg-card/80 backdrop-blur-md border-white/20 text-white">
+              <div className="w-56">
                 {controls}
               </div>
-            </DialogContent>
-          </Dialog>
+            </PopoverContent>
+          </Popover>
 
         </div>
          {orderedUrls.length > 1 && (
