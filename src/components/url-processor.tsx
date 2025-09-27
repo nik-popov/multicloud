@@ -17,6 +17,7 @@ import {useEffect, useRef, useState, useMemo, useTransition} from 'react';
 import {VideoGrid} from './video-grid';
 import {Slider} from './ui/slider';
 import {Label} from './ui/label';
+import { Switch } from './ui/switch';
 
 export function UrlProcessor() {
   const [urls, setUrls] = useState<string[]>([]);
@@ -25,12 +26,31 @@ export function UrlProcessor() {
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [gridSize, setGridSize] = useState(3);
   const [isPending, startTransition] = useTransition();
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
 
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const hasUrls = urls.length > 0;
+
+  useEffect(() => {
+    if (isAutoScrolling) {
+      scrollIntervalRef.current = setInterval(() => {
+        window.scrollBy({ top: 1, behavior: 'smooth' });
+      }, 50); 
+    } else {
+      if (scrollIntervalRef.current) {
+        clearInterval(scrollIntervalRef.current);
+      }
+    }
+    return () => {
+      if (scrollIntervalRef.current) {
+        clearInterval(scrollIntervalRef.current);
+      }
+    };
+  }, [isAutoScrolling]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -62,6 +82,7 @@ export function UrlProcessor() {
   const handleSelectVideo = (url: string) => {
     setSelectedUrl(url);
     setView('focus');
+    setIsAutoScrolling(false);
   };
 
   useEffect(() => {
@@ -92,7 +113,7 @@ export function UrlProcessor() {
   return (
     <div className="space-y-8">
       {!hasUrls && !isPending && (
-        <Card className="w-full shadow-lg max-w-3xl mx-auto">
+        <Card className="w-full shadow-lg max-w-3xl mx-auto bg-card/80 backdrop-blur-sm">
           <form onSubmit={handleSubmit} ref={formRef}>
             <CardHeader>
               <CardTitle>URL Validator</CardTitle>
@@ -157,22 +178,37 @@ export function UrlProcessor() {
               </Button>
             )}
             {view === 'grid' && (
-              <div className="max-w-xs space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="grid-size">Grid Size</Label>
-                  <span className="text-sm font-medium">
-                    {gridSize} Columns
-                  </span>
+              <div className="flex items-start justify-between">
+                <div className="max-w-xs space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="grid-size">Grid Size</Label>
+                    <span className="text-sm font-medium">
+                      {gridSize} Columns
+                    </span>
+                  </div>
+                  <Slider
+                    id="grid-size"
+                    min={1}
+                    max={8}
+                    step={1}
+                    value={[gridSize]}
+                    onValueChange={value => setGridSize(value[0])}
+                  />
                 </div>
-                <Slider
-                  id="grid-size"
-                  min={1}
-                  max={8}
-                  step={1}
-                  value={[gridSize]}
-                  onValueChange={value => setGridSize(value[0])}
-                />
               </div>
+            )}
+             {view === 'grid' && (
+              <Card className="fixed top-1/2 right-4 -translate-y-1/2 z-50 p-3 bg-card/80 backdrop-blur-sm">
+                <CardContent className="p-0 flex flex-col items-center gap-2">
+                  <Label htmlFor="auto-scroll" className="text-sm font-medium">Auto-Scroll</Label>
+                  <Switch
+                    id="auto-scroll"
+                    checked={isAutoScrolling}
+                    onCheckedChange={setIsAutoScrolling}
+                    aria-label="Toggle auto-scroll"
+                  />
+                </CardContent>
+              </Card>
             )}
             <VideoGrid
               urls={orderedUrls ?? []}
