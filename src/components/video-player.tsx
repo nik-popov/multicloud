@@ -106,7 +106,9 @@ export function VideoPlayer({
       }
       // Start playing for all non-focus views if visible
       if (isVisible) {
-        if (!isFocusView || isPlaying) {
+        if (!isFocusView) {
+          videoRef.current.play().catch(() => {});
+        } else if (isPlaying) {
           videoRef.current.play().catch(() => {});
         }
       }
@@ -195,7 +197,6 @@ export function VideoPlayer({
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
-            autoPlay={!isFocusView && isVisible}
           />
           {!isPlaying && isFocusView && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -292,3 +293,5 @@ export function VideoPlayer({
     </div>
   );
 }
+
+    
