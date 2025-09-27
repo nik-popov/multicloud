@@ -12,19 +12,21 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {Textarea} from '@/components/ui/textarea';
-import {ArrowLeft, Loader2} from 'lucide-react';
+import {ArrowLeft, Loader2, Upload} from 'lucide-react';
 import {useEffect, useRef, useState, useTransition} from 'react';
 import {VideoGrid} from './video-grid';
 import {Slider} from './ui/slider';
 import {Label} from './ui/label';
 import {Switch} from './ui/switch';
+import { useToast } from '@/hooks/use-toast';
 
 type UrlProcessorProps = {
   showForm: boolean;
   onProcessStart: () => void;
+  setHistory: (history: any[]) => void;
 };
 
-export function UrlProcessor({ showForm, onProcessStart }: UrlProcessorProps) {
+export function UrlProcessor({ showForm, onProcessStart, setHistory }: UrlProcessorProps) {
   const [urls, setUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'grid' | 'focus'>('grid');
@@ -38,8 +40,29 @@ export function UrlProcessor({ showForm, onProcessStart }: UrlProcessorProps) {
   const resultRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const {toast} = useToast();
 
   const hasUrls = urls.length > 0;
+
+  useEffect(() => {
+    const storedHistory = localStorage.getItem('bulkshorts_history');
+    if (storedHistory) {
+      setHistory(JSON.parse(storedHistory));
+    }
+  }, [setHistory]);
+
+  const saveToHistory = (newUrls: string[]) => {
+    if (newUrls.length === 0) return;
+    const newBatch = {
+      timestamp: new Date().toISOString(),
+      urls: newUrls
+    };
+    const storedHistory = localStorage.getItem('bulkshorts_history') || '[]';
+    const updatedHistory = [newBatch, ...JSON.parse(storedHistory)].slice(0, 50); // Limit history size
+    localStorage.setItem('bulkshorts_history', JSON.stringify(updatedHistory));
+    setHistory(updatedHistory);
+  }
 
   useEffect(() => {
     if (showForm) {
@@ -69,34 +92,71 @@ export function UrlProcessor({ showForm, onProcessStart }: UrlProcessorProps) {
     };
   }, [isAutoScrolling, view, scrollSpeed]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    onProcessStart();
-    const formData = new FormData(event.currentTarget);
-    const urlsToValidate = (formData.get('urls') as string)
-      ?.split('\n')
-      .filter(Boolean);
-
+  const processUrls = (urlsToValidate: string[]) => {
     if (!urlsToValidate || urlsToValidate.length === 0) {
-      setError('Please enter at least one URL.');
+      setError('Please enter at least one URL or select files.');
       return;
     }
-
+    
+    onProcessStart();
     setUrls([]);
     setError(null);
+    const validUrls: string[] = [];
     
     startTransition(async () => {
       for (const url of urlsToValidate) {
         const result = await validateUrlAction(url);
         if (result.validUrl) {
           setUrls(prev => [...prev, result.validUrl!]);
+          validUrls.push(result.validUrl);
         }
         if (result.error) {
           setError(prev => (prev ? `${prev}\n${result.error}` : result.error));
         }
       }
+      saveToHistory(validUrls);
     });
+  }
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const urlsToValidate = (formData.get('urls') as string)
+      ?.split('\n')
+      .map(u => u.trim())
+      .filter(Boolean);
+
+    processUrls(urlsToValidate);
   };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'));
+    if(videoFiles.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'No video files selected',
+        description: 'Please select valid video files.',
+      });
+      return;
+    }
+
+    const objectUrls = videoFiles.map(file => URL.createObjectURL(file));
+    if (textareaRef.current) {
+      const existingUrls = textareaRef.current.value.split('\n').filter(Boolean);
+      textareaRef.current.value = [...existingUrls, ...objectUrls].join('\n');
+    }
+    toast({
+      title: 'Files added!',
+      description: `${videoFiles.length} video files have been added to the text area.`
+    })
+  }
+  
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  }
 
   const handleSelectVideo = (url: string) => {
     setSelectedUrl(url);
@@ -123,7 +183,7 @@ export function UrlProcessor({ showForm, onProcessStart }: UrlProcessorProps) {
             <CardHeader>
               <CardTitle>URL Validator</CardTitle>
               <CardDescription>
-                Paste your list of video URLs below. Our AI will validate them
+                Paste your list of video URLs below, or upload files from your computer. Our AI will validate them
                 and create a discovery grid.
               </CardDescription>
             </CardHeader>
@@ -133,24 +193,42 @@ export function UrlProcessor({ showForm, onProcessStart }: UrlProcessorProps) {
                 name="urls"
                 placeholder={`https://example.com/video1.mp4\nhttps://anothersite.org/media.mp4\n...and so on`}
                 className="min-h-[150px] resize-y font-mono text-sm"
-                required
+              />
+               <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
+                accept="video/*"
+                multiple
               />
             </CardContent>
             <CardFooter className="flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <Button
-                type="submit"
-                disabled={isPending}
-                className="w-full sm:w-auto"
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Validating...
-                  </>
-                ) : (
-                  'Discover Videos'
-                )}
-              </Button>
+               <div className="flex gap-2 w-full sm:w-auto">
+                <Button
+                  type="submit"
+                  disabled={isPending}
+                  className="flex-grow sm:flex-grow-0"
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Validating...
+                    </>
+                  ) : (
+                    'Discover Videos'
+                  )}
+                </Button>
+                 <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleUploadClick}
+                  disabled={isPending}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Files
+                </Button>
+              </div>
               {error && (
                 <Alert
                   variant="destructive"
