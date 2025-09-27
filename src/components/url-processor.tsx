@@ -260,25 +260,27 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
         {hasUrls && (
           <div className="space-y-4">
             {view === 'grid' && (
-               <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4">
+               <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
                <div className="flex flex-col gap-4 sticky top-24 h-min">
-                <Card className="p-3 bg-card/80 backdrop-blur-sm">
-                  <CardContent className="p-0 flex flex-row md:flex-col items-center gap-2">
-                    <Label
-                      htmlFor="auto-scroll"
-                      className="text-sm font-medium"
-                    >
-                      Auto-Scroll
-                    </Label>
-                    <Switch
-                      id="auto-scroll"
-                      checked={isAutoScrolling}
-                      onCheckedChange={setIsAutoScrolling}
-                      aria-label="Toggle auto-scroll"
-                    />
+                <Card className="p-4 bg-card/80 backdrop-blur-sm">
+                  <CardContent className="p-0 flex flex-col items-center gap-4">
+                    <div className="flex items-center justify-between w-full">
+                      <Label
+                        htmlFor="auto-scroll"
+                        className="text-sm font-medium"
+                      >
+                        Auto-Scroll
+                      </Label>
+                      <Switch
+                        id="auto-scroll"
+                        checked={isAutoScrolling}
+                        onCheckedChange={setIsAutoScrolling}
+                        aria-label="Toggle auto-scroll"
+                      />
+                    </div>
                   </CardContent>
                 </Card>
-                <Card className="p-3 bg-card/80 backdrop-blur-sm max-w-[200px] w-full">
+                <Card className="p-4 bg-card/80 backdrop-blur-sm">
                   <CardContent className="p-0 space-y-2">
                     <div className="flex justify-between items-center gap-4">
                       <Label htmlFor="grid-size" className="flex-shrink-0">
@@ -296,7 +298,7 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
                     />
                   </CardContent>
                 </Card>
-                <Card className="p-3 bg-card/80 backdrop-blur-sm max-w-[200px] w-full">
+                <Card className="p-4 bg-card/80 backdrop-blur-sm">
                   <CardContent className="p-0 space-y-2">
                     <div className="flex justify-between items-center gap-4">
                       <Label
