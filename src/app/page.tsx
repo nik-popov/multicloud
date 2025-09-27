@@ -72,14 +72,15 @@ function HomePageContent() {
         router.replace('/', undefined);
       }
     }
+    // Always set loading to false after handling params or if no params exist
+    setIsLoading(false);
   }, [user, router]);
 
   useEffect(() => {
     const urlsParam = searchParams.get('urls');
-    if (urlsParam) {
-      handleUrlParam(urlsParam);
-    }
+    handleUrlParam(urlsParam);
   }, [searchParams, handleUrlParam]);
+
 
   useEffect(() => {
     async function loadUserData() {
@@ -98,7 +99,7 @@ function HomePageContent() {
         const localHistory = localStorage.getItem('bulkshorts_history');
         setHistory(localHistory ? JSON.parse(localHistory) : []);
       }
-       setIsLoading(false);
+       // Don't set isLoading here, handleUrlParam does it.
     }
     
     if (!authLoading) {
@@ -278,10 +279,10 @@ function HomePageContent() {
              <Button
               variant="outline"
               onClick={showFavorites}
-              disabled={favorites.length === 0 && !isLoading}
+              disabled={favorites.length === 0 && !authLoading}
             >
               <Heart className="mr-2" />
-              Favorites {isLoading ? '' : `(${favorites.length})`}
+              Favorites {authLoading ? '' : `(${favorites.length})`}
             </Button>
             {user && !authLoading ? (
               <Button variant="outline" asChild>
