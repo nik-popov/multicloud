@@ -26,11 +26,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const auth = getAuth(app);
 
+  const signOut = () => {
+    return firebaseSignOut(auth);
+  };
+  
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    const unsubscribe = onAuthStateChanged(
+      auth, 
+      (user) => {
+        setUser(user);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Authentication error, signing out:", error);
+        setUser(null);
+        setLoading(false);
+        signOut();
+      }
+    );
     return () => unsubscribe();
   }, [auth]);
 
@@ -42,9 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return createUserWithEmailAndPassword(auth, email, pass);
   };
 
-  const signOut = () => {
-    return firebaseSignOut(auth);
-  };
 
   const value = {
     user,
