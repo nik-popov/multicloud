@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "video-placeholder",
+      "description": "A placeholder image for the looping video player.",
+      "imageUrl": "https://images.unsplash.com/photo-1636750496817-a00f428be148?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHx2aWRlbyUyMHBsYXllcnxlbnwwfHx8fDE3NTg5Nzk2OTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "video player"
+    }
+  ]
 }
