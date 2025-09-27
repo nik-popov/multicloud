@@ -4,20 +4,49 @@
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { getFavorites } from '@/lib/firestore';
+import { Heart, Loader2 } from 'lucide-react';
 
 export default function AccountPage() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
+  const [favoritesCount, setFavoritesCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
 
-  if (!user) {
-    router.push('/login');
-    return null;
+    async function fetchFavorites() {
+      setLoading(true);
+      const favs = await getFavorites(user.uid);
+      setFavoritesCount(favs.length);
+      setLoading(false);
+    }
+    fetchFavorites();
+  }, [user, authLoading, router]);
+
+  if (authLoading || loading || !user) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <header className="flex items-center justify-between p-4 border-b shrink-0">
+          <div className="flex items-center gap-4">
+            <Link href="/" className="text-2xl font-bold tracking-tight text-primary cursor-pointer">
+              bulkshorts
+            </Link>
+          </div>
+        </header>
+        <main className="flex-grow flex items-center justify-center p-4">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -33,11 +62,20 @@ export default function AccountPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Account</CardTitle>
+            <CardDescription>Manage your account details and preferences.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p>
-              Welcome back! You are logged in as: <strong>{user.email}</strong>
-            </p>
+            <div className="space-y-1">
+                <p className="text-sm font-medium">Email</p>
+                <p className="text-muted-foreground">{user.email}</p>
+            </div>
+             <div className="space-y-1">
+                <p className="text-sm font-medium">Favorites</p>
+                <div className="flex items-center text-muted-foreground">
+                    <Heart className="w-4 h-4 mr-2 text-red-500 fill-red-500" />
+                    <span>{favoritesCount} videos</span>
+                </div>
+            </div>
             <Button onClick={signOut} className="w-full">
               Log Out
             </Button>
