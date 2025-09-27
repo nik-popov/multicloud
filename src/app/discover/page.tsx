@@ -1,3 +1,4 @@
+
 'use client';
 
 import { UrlProcessor } from '@/components/url-processor';
@@ -11,7 +12,7 @@ function DiscoverPageContent() {
   const isMobile = useIsMobile();
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col min-h-screen">
       <header className="flex items-center justify-between p-4 border-b shrink-0">
         <div className="flex items-center gap-4">
           <Link href="/" className="text-2xl font-bold tracking-tight text-primary cursor-pointer">
@@ -30,7 +31,7 @@ function DiscoverPageContent() {
             </Button>
         </div>
       </header>
-      <main className="flex-grow overflow-y-auto flex items-center justify-center">
+      <main className="flex-grow flex items-center justify-center">
         <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
             <UrlProcessor />
         </div>
