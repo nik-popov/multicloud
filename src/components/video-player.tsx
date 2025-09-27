@@ -75,6 +75,9 @@ export function VideoPlayer({
       } else {
         setAspectRatio('9/16');
       }
+      // ensure autoplay on load
+      videoRef.current.play().catch(() => setIsPlaying(false));
+      setIsPlaying(!videoRef.current.paused);
     }
   };
   

@@ -2,34 +2,39 @@
 'use client';
 import {cn} from '@/lib/utils';
 import {VideoPlayer} from './video-player';
-import {ArrowLeft, ChevronDown, ChevronUp, Settings} from 'lucide-react';
+import {ArrowLeft, ChevronDown, ChevronUp} from 'lucide-react';
 import {useMemo, useEffect, useRef} from 'react';
 import {Button} from './ui/button';
 import {Separator} from './ui/separator';
 import { VideoCard } from './video-card';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Card, CardContent } from './ui/card';
+import { Label } from './ui/label';
+import { Switch } from './ui/switch';
+import { Slider } from './ui/slider';
 
 type VideoGridProps = {
   urls: string[];
   selectedUrl?: string | null;
   onSelectVideo?: (url: string) => void;
-  gridCols?: number;
+  gridSize?: number;
+  setGridSize?: (size: number) => void;
   history?: any[];
   loadBatch?: (urls: string[]) => void;
   onBackToGrid?: () => void;
   favorites: string[];
   onToggleFavorite: (url: string) => void;
   onFocusViewChange?: (isFocusView: boolean) => void;
-  controls?: React.ReactNode;
   viewMode?: 'main' | 'favorites';
+  isAutoScrolling: boolean;
+  setIsAutoScrolling: (isAutoScrolling: boolean) => void;
+  scrollSpeed: number;
+  setScrollSpeed: (speed: number) => void;
 };
 
 const safeId = (id: string) => {
-    // Replace any character that is not a letter, number, hyphen, or underscore
-    return id.replace(/[^a-zA-Z0-9-_]/g, (match) => {
-        // Return the character code as a hex value, prefixed with an underscore
-        return `_${match.charCodeAt(0).toString(16)}`;
-    });
+  return id.replace(/[^a-zA-Z0-9-_]/g, (match) => {
+      return `_${match.charCodeAt(0).toString(16)}`;
+  });
 };
 
 
@@ -37,17 +42,22 @@ export function VideoGrid({
   urls,
   selectedUrl,
   onSelectVideo = () => {},
-  gridCols = 4,
+  gridSize = 4,
+  setGridSize = () => {},
   history = [],
   loadBatch = () => {},
   onBackToGrid = () => {},
   favorites,
   onToggleFavorite,
   onFocusViewChange,
-  controls,
   viewMode,
+  isAutoScrolling,
+  setIsAutoScrolling,
+  scrollSpeed,
+  setScrollSpeed,
 }: VideoGridProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const view = selectedUrl ? 'focus' : 'grid';
 
@@ -85,6 +95,31 @@ export function VideoGrid({
     }
   }, [view, selectedUrl, orderedUrls]);
 
+    useEffect(() => {
+    const scrollAmount = scrollSpeed / 5;
+    if (isAutoScrolling) {
+      if (view === 'grid' && scrollContainerRef.current) {
+        scrollIntervalRef.current = setInterval(() => {
+          window.scrollBy({top: scrollAmount, behavior: 'smooth'});
+        }, 50);
+      } else if (view === 'focus' && scrollContainerRef.current) {
+        scrollIntervalRef.current = setInterval(() => {
+          scrollContainerRef.current?.scrollBy({top: scrollContainerRef.current.clientHeight, behavior: 'smooth'});
+        }, 3000 / (scrollSpeed / 5)); // Adjust timing based on speed
+      }
+    } else {
+      if (scrollIntervalRef.current) {
+        clearInterval(scrollIntervalRef.current);
+      }
+    }
+    return () => {
+      if (scrollIntervalRef.current) {
+        clearInterval(scrollIntervalRef.current);
+      }
+    };
+  }, [isAutoScrolling, view, scrollSpeed, scrollContainerRef]);
+
+
   const currentBatchTimestamp =
     history.find(batch => JSON.stringify(batch.urls) === JSON.stringify(urls))
       ?.timestamp;
@@ -109,6 +144,65 @@ export function VideoGrid({
       });
     }
   };
+
+  const Controls = () => (
+     <div className="flex flex-col gap-4 text-white">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between w-full">
+            <Label
+              htmlFor="auto-scroll"
+              className="text-sm font-medium"
+            >
+              Auto-Scroll
+            </Label>
+            <Switch
+              id="auto-scroll"
+              checked={isAutoScrolling}
+              onCheckedChange={setIsAutoScrolling}
+              aria-label="Toggle auto-scroll"
+            />
+          </div>
+        </div>
+
+        {view === 'grid' && (
+          <div className="p-0 space-y-2">
+            <div className="flex justify-between items-center gap-4">
+              <Label htmlFor="grid-size" className="flex-shrink-0">
+                Grid Size
+              </Label>
+              <span className="text-sm font-medium">{gridSize}</span>
+            </div>
+            <Slider
+              id="grid-size"
+              min={1}
+              max={8}
+              step={1}
+              value={[gridSize]}
+              onValueChange={value => setGridSize(value[0])}
+            />
+          </div>
+        )}
+        <div className="p-0 space-y-2">
+          <div className="flex justify-between items-center gap-4">
+            <Label
+              htmlFor="scroll-speed"
+              className="flex-shrink-0"
+            >
+              Scroll Speed
+            </Label>
+            <span className="text-sm font-medium">{scrollSpeed}</span>
+          </div>
+          <Slider
+            id="scroll-speed"
+            min={1}
+            max={10}
+            step={1}
+            value={[scrollSpeed]}
+            onValueChange={value => setScrollSpeed(value[0])}
+          />
+        </div>
+      </div>
+  );
 
   if (view === 'focus') {
     return (
@@ -148,7 +242,7 @@ export function VideoGrid({
                 src={url}
                 isLiked={favorites.includes(url)}
                 onToggleLike={() => onToggleFavorite(url)}
-                controls={controls}
+                controls={<Controls />}
               />
             </div>
           ))}
@@ -169,19 +263,28 @@ export function VideoGrid({
   return (
     <div>
       <h2 className="text-2xl font-bold text-center mb-8">Video Discoveries</h2>
-      <div
-        ref={scrollContainerRef}
-        className={cn("grid gap-4 md:gap-6", `grid-cols-2 md:grid-cols-${gridCols}`)}
-      >
-        {urls.map(url => (
-          <div key={url} id={`video-wrapper-${safeId(url)}`} className="w-full">
-            <VideoCard
-              src={url}
-              onClick={() => handleSelectVideo(url)}
-              isLiked={favorites.includes(url)}
-            />
+      <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
+          <div className="sticky top-4 h-min hidden md:block">
+            <Card className="p-4 bg-card/80 backdrop-blur-sm">
+              <CardContent className="p-0">
+                <Controls />
+              </CardContent>
+            </Card>
           </div>
-        ))}
+        <div
+          ref={scrollContainerRef}
+          className={cn("grid gap-4 md:gap-6", `grid-cols-2 md:grid-cols-${gridSize}`)}
+        >
+          {urls.map(url => (
+            <div key={url} id={`video-wrapper-${safeId(url)}`} className="w-full">
+              <VideoCard
+                src={url}
+                onClick={() => handleSelectVideo(url)}
+                isLiked={favorites.includes(url)}
+              />
+            </div>
+          ))}
+        </div>
       </div>
       {otherHistory.length > 0 && view === 'grid' && (
         <div className="mt-16 text-center">

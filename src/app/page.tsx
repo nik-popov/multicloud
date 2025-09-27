@@ -25,6 +25,11 @@ export default function Home() {
   const [selectedUrlForFocus, setSelectedUrlForFocus] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
+  const [gridSize, setGridSize] = useState(3);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+  const [scrollSpeed, setScrollSpeed] = useState(5);
+
+
   useEffect(() => {
     const storedFavorites = localStorage.getItem('bulkshorts_favorites');
     if (storedFavorites) {
@@ -124,6 +129,12 @@ export default function Home() {
               selectedUrl={selectedUrlForFocus}
               onBackToGrid={handleBackToGrid}
               viewMode={viewMode}
+              gridSize={gridSize}
+              setGridSize={setGridSize}
+              isAutoScrolling={isAutoScrolling}
+              setIsAutoScrolling={setIsAutoScrolling}
+              scrollSpeed={scrollSpeed}
+              setScrollSpeed={setScrollSpeed}
             />
       </div>
     );

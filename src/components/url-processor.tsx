@@ -15,10 +15,6 @@ import {
 import {Textarea} from '@/components/ui/textarea';
 import {Loader2, Upload} from 'lucide-react';
 import {useEffect, useRef, useState, useTransition} from 'react';
-import {VideoGrid} from './video-grid';
-import {Slider} from './ui/slider';
-import {Label} from './ui/label';
-import {Switch} from './ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { VideoCard } from './video-card';
 import { Progress } from '@/components/ui/progress';
@@ -48,26 +44,16 @@ export function UrlProcessor({
 }: UrlProcessorProps) {
   const [urls, setUrls] = useState<string[]>(initialUrls || []);
   const [error, setError] = useState<string | null>(null);
-  const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
-  const [gridSize, setGridSize] = useState(3);
   const [isPending, startTransition] = useTransition();
-  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
-  const [scrollSpeed, setScrollSpeed] = useState(5);
   const [progress, setProgress] = useState(0);
 
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const {toast} = useToast();
 
   const hasUrls = urls.length > 0;
-  const view = selectedUrl ? 'focus' : 'grid';
-
-  useEffect(() => {
-    onFocusViewChange(view === 'focus');
-  }, [view, onFocusViewChange]);
   
   useEffect(() => {
     if (initialUrls) {
@@ -98,35 +84,9 @@ export function UrlProcessor({
     if (showForm) {
       setUrls([]);
       setError(null);
-      setSelectedUrl(null);
     }
   }, [showForm]);
 
-
-  useEffect(() => {
-    const scrollAmount = scrollSpeed / 5;
-    if (isAutoScrolling) {
-      if (view === 'grid') {
-        scrollIntervalRef.current = setInterval(() => {
-          window.scrollBy({top: scrollAmount, behavior: 'smooth'});
-        }, 50);
-      } else if (view === 'focus') {
-        scrollIntervalRef.current = setInterval(() => {
-          const container = document.querySelector('[data-focus-view-container]');
-          container?.scrollBy({top: container.clientHeight, behavior: 'smooth'});
-        }, 3000 / (scrollSpeed / 5)); // Adjust timing based on speed
-      }
-    } else {
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current);
-      }
-    }
-    return () => {
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current);
-      }
-    };
-  }, [isAutoScrolling, view, scrollSpeed]);
 
   const processUrls = (urlsToValidate: string[]) => {
     if (!urlsToValidate || urlsToValidate.length === 0) {
@@ -198,73 +158,6 @@ export function UrlProcessor({
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   }
-
-  const handleSelectVideo = (url: string) => {
-    setSelectedUrl(url);
-  };
-
-  const handleBackToGrid = () => {
-    setSelectedUrl(null);
-  };
-  
-  const Controls = () => (
-     <div className="flex flex-col gap-4 text-white">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between w-full">
-            <Label
-              htmlFor="auto-scroll"
-              className="text-sm font-medium"
-            >
-              Auto-Scroll
-            </Label>
-            <Switch
-              id="auto-scroll"
-              checked={isAutoScrolling}
-              onCheckedChange={setIsAutoScrolling}
-              aria-label="Toggle auto-scroll"
-            />
-          </div>
-        </div>
-
-        {view === 'grid' && (
-          <div className="p-0 space-y-2">
-            <div className="flex justify-between items-center gap-4">
-              <Label htmlFor="grid-size" className="flex-shrink-0">
-                Grid Size
-              </Label>
-              <span className="text-sm font-medium">{gridSize}</span>
-            </div>
-            <Slider
-              id="grid-size"
-              min={1}
-              max={8}
-              step={1}
-              value={[gridSize]}
-              onValueChange={value => setGridSize(value[0])}
-            />
-          </div>
-        )}
-        <div className="p-0 space-y-2">
-          <div className="flex justify-between items-center gap-4">
-            <Label
-              htmlFor="scroll-speed"
-              className="flex-shrink-0"
-            >
-              Scroll Speed
-            </Label>
-            <span className="text-sm font-medium">{scrollSpeed}</span>
-          </div>
-          <Slider
-            id="scroll-speed"
-            min={1}
-            max={10}
-            step={1}
-            value={[scrollSpeed]}
-            onValueChange={value => setScrollSpeed(value[0])}
-          />
-        </div>
-      </div>
-  );
 
   return (
     <div className="space-y-8">
@@ -366,45 +259,6 @@ export function UrlProcessor({
       )}
 
       <div ref={resultRef} className="relative">
-        {hasUrls && (
-          <div className="space-y-4">
-            {view === 'grid' ? (
-               <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
-                  <div className="sticky top-4 h-min">
-                    <Card className="p-4 bg-card/80 backdrop-blur-sm">
-                      <CardContent className="p-0">
-                        <Controls />
-                      </CardContent>
-                    </Card>
-                  </div>
-                  <VideoGrid
-                    urls={urls ?? []}
-                    selectedUrl={selectedUrl}
-                    onSelectVideo={handleSelectVideo}
-                    gridCols={gridSize}
-                    history={history}
-                    loadBatch={loadBatch}
-                    onBackToGrid={handleBackToGrid}
-                    favorites={favorites}
-                    onToggleFavorite={onToggleFavorite}
-                  />
-               </div>
-            ) : (
-                <VideoGrid
-                  urls={urls ?? []}
-                  selectedUrl={selectedUrl}
-                  onSelectVideo={handleSelectVideo}
-                  gridCols={gridSize}
-                  history={history}
-                  loadBatch={loadBatch}
-                  onBackToGrid={handleBackToGrid}
-                  favorites={favorites}
-                  onToggleFavorite={onToggleFavorite}
-                  controls={<Controls />}
-                />
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
