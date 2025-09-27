@@ -24,6 +24,8 @@ export function VideoPlayer({
   const [aspectRatio, setAspectRatio] = useState('9/16');
   const [isLiked, setIsLiked] = useState(false);
   const [showHeart, setShowHeart] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -72,14 +74,20 @@ export function VideoPlayer({
   }
 
   return (
-    <div className="w-full relative group flex items-center justify-center">
+    <div 
+      className="w-full relative group flex items-center justify-center" 
+      ref={containerRef}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
       <Card
         className={cn(
           'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl',
           isFocusView
             ? 'bg-black'
-            : 'cursor-pointer hover:scale-105 w-full aspect-[9/16]'
+            : 'cursor-pointer hover:scale-105 w-full'
         )}
+        style={isFocusView ? {} : {aspectRatio: '9/16'}}
         onClick={!isFocusView ? onClick : undefined}
         onDoubleClick={handleDoubleClick}
       >
@@ -124,7 +132,7 @@ export function VideoPlayer({
       </Card>
       
       {isFocusView && (
-        <div className="absolute right-[-220px] w-[200px] flex flex-col items-center gap-4 p-4">
+        <div className="absolute left-full ml-4 w-[200px] flex flex-col items-center gap-4 p-4">
           <div className="text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm w-full">
             <p className="font-bold">@creatorname</p>
             <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
