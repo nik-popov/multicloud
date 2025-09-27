@@ -84,11 +84,18 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
 
 
   useEffect(() => {
-    if (isAutoScrolling && view === 'grid') {
-      const scrollAmount = scrollSpeed / 5;
-      scrollIntervalRef.current = setInterval(() => {
-        window.scrollBy({top: scrollAmount, behavior: 'smooth'});
-      }, 50);
+    const scrollAmount = scrollSpeed / 5;
+    if (isAutoScrolling) {
+      if (view === 'grid') {
+        scrollIntervalRef.current = setInterval(() => {
+          window.scrollBy({top: scrollAmount, behavior: 'smooth'});
+        }, 50);
+      } else if (view === 'focus') {
+        scrollIntervalRef.current = setInterval(() => {
+          const container = document.querySelector('[data-focus-view-container]');
+          container?.scrollBy({top: container.clientHeight, behavior: 'smooth'});
+        }, 3000 / (scrollSpeed / 5)); // Adjust timing based on speed
+      }
     } else {
       if (scrollIntervalRef.current) {
         clearInterval(scrollIntervalRef.current);
@@ -172,13 +179,76 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
   const handleSelectVideo = (url: string) => {
     setSelectedUrl(url);
     setView('focus');
-    setIsAutoScrolling(false);
   };
 
   const handleBackToGrid = () => {
     setView('grid');
     setSelectedUrl(null);
   };
+  
+  const Controls = () => (
+     <div className="flex flex-col gap-4 sticky top-24 h-min">
+        <Card className="p-4 bg-card/80 backdrop-blur-sm">
+          <CardContent className="p-0 flex flex-col items-center gap-4">
+            <div className="flex items-center justify-between w-full">
+              <Label
+                htmlFor="auto-scroll"
+                className="text-sm font-medium"
+              >
+                Auto-Scroll
+              </Label>
+              <Switch
+                id="auto-scroll"
+                checked={isAutoScrolling}
+                onCheckedChange={setIsAutoScrolling}
+                aria-label="Toggle auto-scroll"
+              />
+            </div>
+          </CardContent>
+        </Card>
+        {view === 'grid' && (
+          <Card className="p-4 bg-card/80 backdrop-blur-sm">
+            <CardContent className="p-0 space-y-2">
+              <div className="flex justify-between items-center gap-4">
+                <Label htmlFor="grid-size" className="flex-shrink-0">
+                  Grid Size
+                </Label>
+                <span className="text-sm font-medium">{gridSize}</span>
+              </div>
+              <Slider
+                id="grid-size"
+                min={1}
+                max={8}
+                step={1}
+                value={[gridSize]}
+                onValueChange={value => setGridSize(value[0])}
+              />
+            </CardContent>
+          </Card>
+        )}
+        <Card className="p-4 bg-card/80 backdrop-blur-sm">
+          <CardContent className="p-0 space-y-2">
+            <div className="flex justify-between items-center gap-4">
+              <Label
+                htmlFor="scroll-speed"
+                className="flex-shrink-0"
+              >
+                Scroll Speed
+              </Label>
+              <span className="text-sm font-medium">{scrollSpeed}</span>
+            </div>
+            <Slider
+              id="scroll-speed"
+              min={1}
+              max={10}
+              step={1}
+              value={[scrollSpeed]}
+              onValueChange={value => setScrollSpeed(value[0])}
+            />
+          </CardContent>
+        </Card>
+      </div>
+  );
 
   return (
     <div className="space-y-8">
@@ -280,67 +350,8 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
       <div ref={resultRef} className="relative">
         {hasUrls && (
           <div className="space-y-4">
-            {view === 'grid' && (
-               <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
-               <div className="flex flex-col gap-4 sticky top-24 h-min">
-                <Card className="p-4 bg-card/80 backdrop-blur-sm">
-                  <CardContent className="p-0 flex flex-col items-center gap-4">
-                    <div className="flex items-center justify-between w-full">
-                      <Label
-                        htmlFor="auto-scroll"
-                        className="text-sm font-medium"
-                      >
-                        Auto-Scroll
-                      </Label>
-                      <Switch
-                        id="auto-scroll"
-                        checked={isAutoScrolling}
-                        onCheckedChange={setIsAutoScrolling}
-                        aria-label="Toggle auto-scroll"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="p-4 bg-card/80 backdrop-blur-sm">
-                  <CardContent className="p-0 space-y-2">
-                    <div className="flex justify-between items-center gap-4">
-                      <Label htmlFor="grid-size" className="flex-shrink-0">
-                        Grid Size
-                      </Label>
-                      <span className="text-sm font-medium">{gridSize}</span>
-                    </div>
-                    <Slider
-                      id="grid-size"
-                      min={1}
-                      max={8}
-                      step={1}
-                      value={[gridSize]}
-                      onValueChange={value => setGridSize(value[0])}
-                    />
-                  </CardContent>
-                </Card>
-                <Card className="p-4 bg-card/80 backdrop-blur-sm">
-                  <CardContent className="p-0 space-y-2">
-                    <div className="flex justify-between items-center gap-4">
-                      <Label
-                        htmlFor="scroll-speed"
-                        className="flex-shrink-0"
-                      >
-                        Scroll Speed
-                      </Label>
-                      <span className="text-sm font-medium">{scrollSpeed}</span>
-                    </div>
-                    <Slider
-                      id="scroll-speed"
-                      min={1}
-                      max={10}
-                      step={1}
-                      value={[scrollSpeed]}
-                      onValueChange={value => setScrollSpeed(value[0])}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
+               <Controls />
                 <VideoGrid
                   urls={urls ?? []}
                   view={view}
@@ -349,31 +360,9 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
                   gridCols={gridSize}
                   history={history}
                   loadBatch={loadBatch}
+                  onBackToGrid={handleBackToGrid}
                 />
               </div>
-            )}
-             {view === 'focus' && (
-              <>
-                <Button
-                  variant="secondary"
-                  onClick={handleBackToGrid}
-                  className="fixed top-24 left-4 z-50"
-                  aria-label="Back to grid"
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Grid
-                </Button>
-                <VideoGrid
-                    urls={urls ?? []}
-                    view={view}
-                    selectedUrl={selectedUrl}
-                    onSelectVideo={handleSelectVideo}
-                    gridCols={gridSize}
-                    history={history}
-                    loadBatch={loadBatch}
-                  />
-              </>
-            )}
           </div>
         )}
       </div>

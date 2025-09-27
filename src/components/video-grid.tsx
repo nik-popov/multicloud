@@ -1,7 +1,7 @@
 'use client';
 import {cn} from '@/lib/utils';
 import {VideoPlayer} from './video-player';
-import {ChevronDown} from 'lucide-react';
+import {ArrowLeft, ChevronDown} from 'lucide-react';
 import {useMemo, useEffect, useRef} from 'react';
 import {Card, CardHeader, CardTitle, CardContent} from './ui/card';
 import {Button} from './ui/button';
@@ -14,6 +14,7 @@ type VideoGridProps = {
   gridCols?: number;
   history: any[];
   loadBatch: (urls: string[]) => void;
+  onBackToGrid: () => void;
 };
 
 export function VideoGrid({
@@ -24,6 +25,7 @@ export function VideoGrid({
   gridCols = 4,
   history = [],
   loadBatch,
+  onBackToGrid,
 }: VideoGridProps) {
   const isGridView = view === 'grid';
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -52,38 +54,65 @@ export function VideoGrid({
   const otherHistory = history.filter(
     batch => batch.timestamp !== currentBatchTimestamp
   );
+  
+  if (view === 'focus') {
+    return (
+      <div className="relative">
+        <Button
+            variant="secondary"
+            onClick={onBackToGrid}
+            className="fixed top-24 left-4 z-50"
+            aria-label="Back to grid"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Grid
+        </Button>
+        <div
+          ref={scrollContainerRef}
+          data-focus-view-container
+          className="flex flex-col items-center snap-y snap-mandatory h-screen overflow-y-scroll"
+        >
+          {orderedUrls.map(url => (
+            <div
+              key={url}
+              id={`video-wrapper-${url}`}
+              className='snap-start h-screen w-full flex items-center justify-center'
+            >
+              <VideoPlayer
+                src={url}
+                isFocusView={true}
+              />
+            </div>
+          ))}
+        </div>
+        {urls.length > 1 && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white pointer-events-none z-10">
+            <span className="text-sm uppercase tracking-widest">Scroll</span>
+            <ChevronDown className="animate-bounce h-6 w-6" />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div>
       <h2 className="text-2xl font-bold text-center mb-8">Video Discoveries</h2>
       <div
         ref={scrollContainerRef}
-        className={cn(
-          'gap-6',
-          isGridView
-            ? 'grid'
-            : 'flex flex-col items-center snap-y snap-mandatory h-screen overflow-y-scroll'
-        )}
-        style={
-          isGridView
-            ? {gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`}
-            : {}
-        }
+        className='grid gap-6'
+        style={{gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`}}
       >
-        {(isGridView ? urls : orderedUrls).map(url => (
+        {urls.map(url => (
           <div
             key={url}
             id={`video-wrapper-${url}`}
-            className={cn(
-              'w-full',
-              !isGridView &&
-                'snap-start h-screen flex items-center justify-center'
-            )}
+            className='w-full'
           >
             <VideoPlayer
               src={url}
               onClick={() => onSelectVideo(url)}
-              isFocusView={!isGridView}
+              isFocusView={false}
             />
           </div>
         ))}
@@ -111,12 +140,6 @@ export function VideoGrid({
               ))}
             </CardContent>
           </Card>
-        </div>
-      )}
-      {!isGridView && urls.length > 1 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white pointer-events-none z-10">
-          <span className="text-sm uppercase tracking-widest">Scroll</span>
-          <ChevronDown className="animate-bounce h-6 w-6" />
         </div>
       )}
     </div>
