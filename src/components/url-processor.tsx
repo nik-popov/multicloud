@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { useEffect, useRef, useActionState, useState } from 'react';
+import { useEffect, useRef, useActionState, useState, useMemo } from 'react';
 import { useFormStatus } from 'react-dom';
 import { VideoGrid } from './video-grid';
 
@@ -37,6 +37,7 @@ export function UrlProcessor() {
   const initialState: ValidationState = { data: null, error: null };
   const [state, formAction] = useActionState(validateUrlsAction, initialState);
   const [view, setView] = useState<'grid' | 'focus'>('grid');
+  const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -53,14 +54,27 @@ export function UrlProcessor() {
     }
   }, [state.data]);
   
-  const handleSelectVideo = () => {
+  const handleSelectVideo = (url: string) => {
+    setSelectedUrl(url);
     setView('focus');
     resultRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleBackToGrid = () => {
     setView('grid');
+    setSelectedUrl(null);
   }
+
+  const orderedUrls = useMemo(() => {
+    if (!selectedUrl || !state.data) return state.data;
+    const urls = [...state.data];
+    const index = urls.indexOf(selectedUrl);
+    if (index > -1) {
+      const [item] = urls.splice(index, 1);
+      urls.unshift(item);
+    }
+    return urls;
+  }, [selectedUrl, state.data]);
 
   return (
     <div className="space-y-8">
@@ -111,7 +125,7 @@ export function UrlProcessor() {
                 Back to Grid
               </Button>
             )}
-            <VideoGrid urls={state.data} view={view} onSelectVideo={handleSelectVideo} />
+            <VideoGrid urls={orderedUrls ?? []} view={view} onSelectVideo={handleSelectVideo} />
           </div>
         )}
       </div>

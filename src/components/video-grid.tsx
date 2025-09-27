@@ -20,7 +20,11 @@ export function VideoGrid({ urls, view, onSelectVideo }: VideoGridProps) {
             )}>
             {urls.map((url, index) => (
                 <div key={index} className={cn(!isGridView && "w-full max-w-sm mx-auto")}>
-                    <VideoPlayer  src={url} onClick={() => onSelectVideo(url)} />
+                    <VideoPlayer  
+                        src={url} 
+                        onClick={() => onSelectVideo(url)} 
+                        isFocusView={!isGridView}
+                    />
                 </div>
             ))}
             </div>
