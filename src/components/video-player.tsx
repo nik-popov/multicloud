@@ -96,6 +96,14 @@ export function VideoPlayer({
         </CardContent>
       </Card>
       {isFocusView && (
+        <div className="absolute left-[-220px] w-[200px] text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
+           <div className="flex items-center gap-2 text-white mb-4">
+            <p className="font-bold">@creator</p>
+            <p className='text-sm text-white/80 truncate'>Video description...</p>
+          </div>
+        </div>
+      )}
+      {isFocusView && (
         <div className="absolute right-[-80px] flex flex-col items-center gap-4 p-4">
           <Button
             variant="ghost"
@@ -104,33 +112,27 @@ export function VideoPlayer({
           >
             <Heart className="h-6 w-6" />
           </Button>
-        </div>
-      )}
-      {isFocusView && (
-        <div className="absolute left-[-220px] w-[200px] text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
-           <div className="flex items-center gap-2 text-white mb-4">
-            <p className="font-bold">@creator</p>
-            <p className='text-sm text-white/80 truncate'>Video description...</p>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <Label
-              htmlFor="speed-control"
-              className="text-white/80 flex-shrink-0"
-            >
-              Speed
-            </Label>
-            <Slider
-              id="speed-control"
-              min={0.5}
-              max={2}
-              step={0.1}
-              value={[playbackRate]}
-              onValueChange={handlePlaybackRateChange}
-              className="flex-1"
-            />
-            <span className="font-mono w-10 text-right">
-              {playbackRate.toFixed(1)}x
-            </span>
+          <div className="w-[80px] text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-2 text-sm">
+              <Label
+                htmlFor="speed-control"
+                className="text-white/80 flex-shrink-0"
+              >
+                Speed
+              </Label>
+              <Slider
+                id="speed-control"
+                min={0.5}
+                max={2}
+                step={0.1}
+                value={[playbackRate]}
+                onValueChange={handlePlaybackRateChange}
+                className="w-full"
+              />
+              <span className="font-mono text-xs">
+                {playbackRate.toFixed(1)}x
+              </span>
+            </div>
           </div>
         </div>
       )}
