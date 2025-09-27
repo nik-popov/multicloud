@@ -27,6 +27,7 @@ export function UrlProcessor() {
   const [gridSize, setGridSize] = useState(3);
   const [isPending, startTransition] = useTransition();
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
+  const [scrollSpeed, setScrollSpeed] = useState(5);
 
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -37,8 +38,9 @@ export function UrlProcessor() {
 
   useEffect(() => {
     if (isAutoScrolling && view === 'grid') {
+      const scrollAmount = scrollSpeed / 5;
       scrollIntervalRef.current = setInterval(() => {
-        window.scrollBy({top: 1, behavior: 'smooth'});
+        window.scrollBy({top: scrollAmount, behavior: 'smooth'});
       }, 50);
     } else {
       if (scrollIntervalRef.current) {
@@ -50,7 +52,7 @@ export function UrlProcessor() {
         clearInterval(scrollIntervalRef.current);
       }
     };
-  }, [isAutoScrolling, view]);
+  }, [isAutoScrolling, view, scrollSpeed]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -184,6 +186,27 @@ export function UrlProcessor() {
                       step={1}
                       value={[gridSize]}
                       onValueChange={value => setGridSize(value[0])}
+                    />
+                  </CardContent>
+                </Card>
+                <Card className="p-3 bg-card/80 backdrop-blur-sm max-w-[200px]">
+                  <CardContent className="p-0 space-y-2">
+                    <div className="flex justify-between items-center gap-4">
+                      <Label
+                        htmlFor="scroll-speed"
+                        className="flex-shrink-0"
+                      >
+                        Scroll Speed
+                      </Label>
+                      <span className="text-sm font-medium">{scrollSpeed}</span>
+                    </div>
+                    <Slider
+                      id="scroll-speed"
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={[scrollSpeed]}
+                      onValueChange={value => setScrollSpeed(value[0])}
                     />
                   </CardContent>
                 </Card>
