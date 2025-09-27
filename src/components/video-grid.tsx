@@ -90,7 +90,7 @@ export function VideoGrid({
             <div
               key={url}
               id={`video-wrapper-${url}`}
-              className='snap-start h-screen w-full flex items-center justify-center p-8'
+              className='snap-start h-screen w-full flex items-center justify-center'
             >
               <VideoPlayer
                 src={url}
