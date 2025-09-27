@@ -40,7 +40,7 @@ export function UrlProcessor() {
   const [state, formAction] = useActionState(validateUrlsAction, initialState);
   const [view, setView] = useState<'grid' | 'focus'>('grid');
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
-  const [gridSize, setGridSize] = useState(4);
+  const [gridSize, setGridSize] = useState(3);
   
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -129,7 +129,7 @@ export function UrlProcessor() {
               </Button>
             )}
             {view === 'grid' && (
-              <div className="max-w-xs mx-auto space-y-2">
+              <div className="max-w-xs space-y-2">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="grid-size">Grid Size</Label>
                   <span className="text-sm font-medium">{gridSize} Columns</span>
