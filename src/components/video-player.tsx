@@ -40,9 +40,14 @@ export function VideoPlayer({
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!videoRef.current || !isFocusView) return;
     const { left, width } = e.currentTarget.getBoundingClientRect();
+    if (width === 0) return;
     const x = e.clientX - left;
     const percentage = x / width;
-    videoRef.current.currentTime = videoRef.current.duration * percentage;
+    const newTime = videoRef.current.duration * percentage;
+    
+    if (isFinite(newTime)) {
+        videoRef.current.currentTime = newTime;
+    }
   };
 
   const handlePlaybackRateChange = (value: number[]) => {
