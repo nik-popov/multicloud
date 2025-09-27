@@ -79,18 +79,16 @@ function HomePageContent() {
 
   useEffect(() => {
     async function loadUserData() {
-      setIsLoading(true);
+      // Don't set loading to true here to avoid blocking UI
       if (user) {
-        // Migrate local favorites to Firestore on login
         await migrateFavorites(user.uid);
         const dbFavorites = await getFavorites(user.uid);
         setFavoritesState(dbFavorites);
       } else {
-        // Load favorites from local storage if logged out
         const localFavorites = localStorage.getItem('bulkshorts_favorites');
         setFavoritesState(localFavorites ? JSON.parse(localFavorites) : []);
       }
-      setIsLoading(false);
+       setIsLoading(false);
     }
     
     if (!authLoading) {
@@ -104,6 +102,7 @@ function HomePageContent() {
     if (storedHistory) {
       setHistory(JSON.parse(storedHistory));
     }
+     setIsLoading(false);
   }, []); 
 
 
@@ -286,17 +285,17 @@ function HomePageContent() {
           </div>
           <div className="flex items-center gap-2">
             {!isMobile && (
-              <Button variant="secondary" onClick={handleNewBatch}>
-                New Batch
+              <Button variant="secondary" asChild>
+                <Link href="/discover">New Batch</Link>
               </Button>
             )}
              <Button
               variant="outline"
               onClick={showFavorites}
-              disabled={favorites.length === 0}
+              disabled={favorites.length === 0 && !isLoading}
             >
               <Heart className="mr-2" />
-              Favorites ({favorites.length})
+              Favorites {isLoading ? '' : `(${favorites.length})`}
             </Button>
             {user && !authLoading ? (
               <>
