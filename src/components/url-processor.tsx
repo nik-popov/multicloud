@@ -24,10 +24,13 @@ type UrlProcessorProps = {
   showForm: boolean;
   onProcessStart: () => void;
   setHistory: (history: any[]) => void;
+  history: any[];
+  initialUrls?: string[];
+  loadBatch: (urls: string[]) => void;
 };
 
-export function UrlProcessor({ showForm, onProcessStart, setHistory }: UrlProcessorProps) {
-  const [urls, setUrls] = useState<string[]>([]);
+export function UrlProcessor({ showForm, onProcessStart, setHistory, history, initialUrls, loadBatch }: UrlProcessorProps) {
+  const [urls, setUrls] = useState<string[]>(initialUrls || []);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'grid' | 'focus'>('grid');
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
@@ -44,6 +47,12 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory }: UrlProces
   const {toast} = useToast();
 
   const hasUrls = urls.length > 0;
+  
+  useEffect(() => {
+    if (initialUrls) {
+      setUrls(initialUrls);
+    }
+  }, [initialUrls]);
 
   useEffect(() => {
     const storedHistory = localStorage.getItem('bulkshorts_history');
@@ -104,9 +113,11 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory }: UrlProces
     const validUrls: string[] = [];
     
     startTransition(async () => {
+      const allUrls = [];
       for (const url of urlsToValidate) {
         const result = await validateUrlAction(url);
         if (result.validUrl) {
+          allUrls.push(result.validUrl);
           setUrls(prev => [...prev, result.validUrl!]);
           validUrls.push(result.validUrl);
         }
@@ -114,7 +125,7 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory }: UrlProces
           setError(prev => (prev ? `${prev}\n${result.error}` : result.error));
         }
       }
-      saveToHistory(validUrls);
+      saveToHistory(allUrls);
     });
   }
 
@@ -329,6 +340,8 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory }: UrlProces
               selectedUrl={selectedUrl}
               onSelectVideo={handleSelectVideo}
               gridCols={gridSize}
+              history={history}
+              loadBatch={loadBatch}
             />
           </div>
         )}

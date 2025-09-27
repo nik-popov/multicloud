@@ -4,23 +4,27 @@ import { UrlProcessor } from '@/components/url-processor';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { History } from 'lucide-react';
 
 export default function Home() {
   const [showProcessor, setShowProcessor] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+  const [currentUrls, setCurrentUrls] = useState<string[] | undefined>(undefined);
 
   const handleShowProcessor = () => {
     setShowProcessor(true);
+    setCurrentUrls([]);
   };
 
   const handleNewBatch = () => {
     setShowProcessor(false);
+    setCurrentUrls(undefined);
   };
   
   const loadBatchFromHistory = (urls: string[]) => {
-    // This is a placeholder for now. We'll implement this logic in the UrlProcessor.
-    console.log("Loading batch:", urls);
+    setCurrentUrls(urls);
+    if (!showProcessor) {
+      setShowProcessor(true);
+    }
   }
 
   return (
@@ -61,6 +65,9 @@ export default function Home() {
               showForm={!showProcessor}
               onProcessStart={handleShowProcessor}
               setHistory={setHistory}
+              history={history}
+              initialUrls={currentUrls}
+              loadBatch={loadBatchFromHistory}
             />
           </div>
         </main>
