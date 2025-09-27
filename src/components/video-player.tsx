@@ -11,60 +11,27 @@ import { Label } from './ui/label';
 
 type VideoPlayerProps = {
   src: string;
-  onClick?: () => void;
-  isFocusView?: boolean;
   isLiked?: boolean;
   onToggleLike?: () => void;
-  isHistoryCard?: boolean;
 };
 
 export function VideoPlayer({
   src,
-  onClick,
-  isFocusView = false,
   isLiked = false,
   onToggleLike = () => {},
-  isHistoryCard = false,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [aspectRatio, setAspectRatio] = useState('9/16');
   const [showHeart, setShowHeart] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          if (videoRef.current) {
-            videoRef.current.play().catch(() => {
-              setIsPlaying(false);
-            });
-          }
-        } else {
-          if (videoRef.current) {
-            videoRef.current.pause();
-          }
-        }
-      },
-      {
-        threshold: 0.8,
-      }
-    );
-
-    const currentRef = containerRef.current;
-    if (currentRef && isHistoryCard) {
-      observer.observe(currentRef);
+    if (videoRef.current) {
+        // Start playing the video when the component mounts
+        videoRef.current.play().catch(() => setIsPlaying(false));
     }
-
-    return () => {
-      if (currentRef && isHistoryCard) {
-        observer.unobserve(currentRef);
-      }
-    };
-  }, [isHistoryCard]);
-
+  }, [src]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -73,7 +40,7 @@ export function VideoPlayer({
   }, [playbackRate]);
   
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!videoRef.current || !isFocusView) return;
+    if (!videoRef.current) return;
     const { left, width } = e.currentTarget.getBoundingClientRect();
     if (width === 0) return;
     const x = e.clientX - left;
@@ -93,18 +60,15 @@ export function VideoPlayer({
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       const { videoWidth, videoHeight } = videoRef.current;
-      if (isFocusView) {
-          if (videoWidth > videoHeight) {
-            setAspectRatio('16/9');
-          } else {
-            setAspectRatio('9/16');
-          }
+      if (videoWidth > videoHeight) {
+        setAspectRatio('16/9');
+      } else {
+        setAspectRatio('9/16');
       }
     }
   };
   
   const handleDoubleClick = () => {
-    if (!isFocusView) return;
     onToggleLike();
     if (!isLiked) {
       setShowHeart(true);
@@ -123,10 +87,6 @@ export function VideoPlayer({
   };
 
   const handleVideoClick = () => {
-    if (!isFocusView) {
-      onClick?.();
-      return;
-    }
     if (videoRef.current) {
       if (videoRef.current.paused) {
         videoRef.current.play();
@@ -140,40 +100,28 @@ export function VideoPlayer({
 
   const videoElement = (
     <Card
-      className={cn(
-        'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl',
-        isFocusView
-          ? 'bg-black w-auto h-full'
-          : 'cursor-pointer hover:scale-105 w-full bg-card h-full',
-        isHistoryCard && 'cursor-pointer hover:scale-105 w-full bg-card h-full'
-      )}
-      style={{aspectRatio: isFocusView ? aspectRatio : '9/16'}}
+      className='bg-black w-auto h-full shadow-lg overflow-hidden transition-all duration-300 rounded-2xl'
+      style={{aspectRatio: aspectRatio}}
       onClick={handleVideoClick}
       onDoubleClick={handleDoubleClick}
     >
       <CardContent className="p-0 h-full">
         <div
-          className={cn(
-            'relative w-full bg-black rounded-lg overflow-hidden h-full'
-          )}
-          onMouseMove={isFocusView ? handleMouseMove : undefined}
+          className='relative w-full bg-black rounded-lg overflow-hidden h-full'
+          onMouseMove={handleMouseMove}
         >
           <video
             ref={videoRef}
             src={src}
-            className={cn(
-              'w-full h-full',
-              isFocusView ? 'object-contain' : 'object-cover'
-            )}
+            className='w-full h-full object-contain'
             loop
             muted
             playsInline
-            autoPlay={!isHistoryCard}
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
           />
-          {!isPlaying && isFocusView && (
+          {!isPlaying && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="bg-black/50 rounded-full p-4">
                     <Play className="h-12 w-12 text-white fill-white" />
@@ -185,25 +133,17 @@ export function VideoPlayer({
               <Heart className="h-24 w-24 text-white/90 animate-in fade-in zoom-in-125 fill-red-500/80 duration-500" />
             </div>
           )}
-            {isLiked && !isFocusView && !isHistoryCard && (
-            <div className="absolute top-2 right-2 pointer-events-none">
-              <Heart className="h-6 w-6 text-red-500 fill-red-500" />
-            </div>
-          )}
-          {isFocusView && (
-            <div className="absolute bottom-4 left-4 right-4 items-center justify-center text-white/70 text-xs font-semibold animate-pulse group-hover:opacity-0 transition-opacity hidden md:flex">
-              <MousePointer className="h-4 w-4 mr-2" />
-              <span>Move mouse to scrub video</span>
-            </div>
-          )}
+          <div className="absolute bottom-4 left-4 right-4 items-center justify-center text-white/70 text-xs font-semibold animate-pulse group-hover:opacity-0 transition-opacity hidden md:flex">
+            <MousePointer className="h-4 w-4 mr-2" />
+            <span>Move mouse to scrub video</span>
+          </div>
         </div>
       </CardContent>
     </Card>
   );
 
   return (
-    <div className="w-full h-full relative group flex items-center justify-center" ref={containerRef}>
-      {isFocusView ? (
+    <div className="w-full h-full relative group flex items-center justify-center">
         <div className="flex items-center justify-center h-full w-full">
           <div className="absolute left-4 top-20 md:relative md:top-auto md:left-auto w-[200px] flex-col items-center gap-4 hidden md:flex">
                 <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
@@ -264,7 +204,6 @@ export function VideoPlayer({
             </Button>
           </div>
         </div>
-      ) : videoElement}
     </div>
   );
 }

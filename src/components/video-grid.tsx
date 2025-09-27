@@ -1,3 +1,4 @@
+
 'use client';
 import {cn} from '@/lib/utils';
 import {VideoPlayer} from './video-player';
@@ -5,6 +6,7 @@ import {ArrowLeft, ChevronDown, ChevronUp} from 'lucide-react';
 import {useMemo, useEffect, useRef} from 'react';
 import {Button} from './ui/button';
 import {Separator} from './ui/separator';
+import { VideoCard } from './video-card';
 
 type VideoGridProps = {
   urls: string[];
@@ -135,7 +137,6 @@ export function VideoGrid({
             >
               <VideoPlayer
                 src={url}
-                isFocusView={true}
                 isLiked={favorites.includes(url)}
                 onToggleLike={() => onToggleFavorite(url)}
               />
@@ -164,12 +165,10 @@ export function VideoGrid({
       >
         {urls.map(url => (
           <div key={url} id={`video-wrapper-${CSS.escape(url)}`} className="w-full">
-            <VideoPlayer
+            <VideoCard
               src={url}
               onClick={() => handleSelectVideo(url)}
-              isFocusView={false}
               isLiked={favorites.includes(url)}
-              onToggleLike={() => onToggleFavorite(url)}
             />
           </div>
         ))}

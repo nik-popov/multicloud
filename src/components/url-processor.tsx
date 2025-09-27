@@ -20,7 +20,7 @@ import {Slider} from './ui/slider';
 import {Label} from './ui/label';
 import {Switch} from './ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { VideoPlayer } from './video-player';
+import { VideoCard } from './video-card';
 
 type UrlProcessorProps = {
   showForm: boolean;
@@ -339,7 +339,7 @@ export function UrlProcessor({
                 <h2 className="text-2xl font-bold text-center">History</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {history.map((batch, index) => (
-                    <Card key={index}
+                    <div key={index}
                       className="group relative overflow-hidden rounded-lg shadow-lg cursor-pointer transition-transform duration-300 ease-in-out hover:scale-105"
                       onClick={() => loadBatch(batch.urls)}
                     >
@@ -348,10 +348,8 @@ export function UrlProcessor({
                           <h3 className="font-bold text-white text-lg">{new Date(batch.timestamp).toLocaleDateString()}</h3>
                           <p className="text-white/80 text-sm">{batch.urls.length} videos</p>
                       </div>
-                      <CardContent className="h-full w-full p-0">
-                        <VideoPlayer src={batch.urls[0]} isFocusView={false} isHistoryCard />
-                      </CardContent>
-                    </Card>
+                      <VideoCard src={batch.urls[0]} />
+                    </div>
                   ))}
                 </div>
             </div>
