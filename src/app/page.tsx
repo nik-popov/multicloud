@@ -1,3 +1,4 @@
+
 'use client';
 
 import {Button} from '@/components/ui/button';
@@ -44,6 +45,12 @@ export default function Home() {
           };
           // Avoid adding duplicates to history
           setHistory(prevHistory => {
+            const isDuplicate = prevHistory.some(
+              batch => JSON.stringify(batch.urls) === JSON.stringify(decodedUrls)
+            );
+            if (isDuplicate) {
+              return prevHistory;
+            }
             const updatedHistory = [newBatch, ...prevHistory].slice(0, 50); // Limit history size
             localStorage.setItem(
               'bulkshorts_history',
@@ -170,6 +177,8 @@ export default function Home() {
       );
     }
 
+    const recommendedItems = history.slice(0, 6);
+
     return (
       <div className="container mx-auto max-w-3xl p-4 sm:p-6 lg:p-8 space-y-8">
         <div className="text-center">
@@ -180,6 +189,32 @@ export default function Home() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input placeholder="Search your history..." className="pl-10" />
         </div>
+
+        {recommendedItems.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-center">Recommended</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {recommendedItems.map((batch, index) => (
+                <div
+                  key={`rec-${index}`}
+                  className="group relative overflow-hidden rounded-lg shadow-lg cursor-pointer transition-transform duration-300 ease-in-out hover:scale-105"
+                  onClick={() => loadBatchFromHistory(batch.urls)}
+                >
+                  <div className="absolute inset-0 bg-black/50 transition-opacity duration-300 group-hover:bg-black/20 z-10" />
+                  <div className="absolute bottom-0 left-0 p-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <h3 className="font-bold text-white text-lg">
+                      {new Date(batch.timestamp).toLocaleDateString()}
+                    </h3>
+                    <p className="text-white/80 text-sm">
+                      {batch.urls.length} videos
+                    </p>
+                  </div>
+                  <VideoCard src={batch.urls[0]} isHistoryCard={true} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {history.length > 0 && (
           <div className="space-y-4">
@@ -210,8 +245,10 @@ export default function Home() {
     );
   };
 
+  const showFooter = !focusViewActive && currentUrls.length === 0;
+
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col min-h-screen">
       {!focusViewActive && (
         <header className="flex items-center justify-between p-4 border-b shrink-0">
           <div className="flex items-center gap-4">
@@ -239,7 +276,7 @@ export default function Home() {
 
       <main className="flex-grow overflow-y-auto">{renderContent()}</main>
       
-      {!focusViewActive && currentUrls.length === 0 && (
+      {showFooter && (
           <footer className="flex items-center justify-center p-4 border-t">
             <div className="flex items-center gap-4">
               <Button variant="outline" asChild>

@@ -31,8 +31,8 @@ function DiscoverPageContent() {
             </Button>
         </div>
       </header>
-      <main className="flex-grow flex items-center justify-center">
-        <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+      <main className="flex-grow flex items-center justify-center p-4">
+        <div className="container mx-auto max-w-6xl">
             <UrlProcessor />
         </div>
       </main>
