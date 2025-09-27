@@ -1,44 +1,45 @@
 'use server';
 
-import {validateAndFilterUrl} from '@/ai/flows/validate-and-filter-urls';
+import {validateAndFilterUrls} from '@/ai/flows/validate-and-filter-urls';
 import {z} from 'zod';
 
 const actionSchema = z.object({
-  url: z.string().min(1, {message: 'URL cannot be empty.'}),
+  urls: z.array(z.string().min(1, {message: 'URL cannot be empty.'})).min(1),
 });
 
 export type ValidationState = {
-  validUrl: string | null;
-  error: string | null;
+  validUrls: string[];
+  errors: string[] | null;
 };
 
-export async function validateUrlAction(
-  url: string
+export async function validateUrlsAction(
+  urls: string[]
 ): Promise<ValidationState> {
-  const validatedFields = actionSchema.safeParse({url});
+  const validatedFields = actionSchema.safeParse({urls});
 
   if (!validatedFields.success) {
     return {
-      validUrl: null,
-      error: validatedFields.error.errors.map(e => e.message).join(', '),
+      validUrls: [],
+      errors: validatedFields.error.errors.map(e => e.message),
     };
   }
 
   try {
-    const result = await validateAndFilterUrl({
-      url: validatedFields.data.url,
+    const result = await validateAndFilterUrls({
+      urls: validatedFields.data.urls,
     });
 
-    if (result.isValid) {
-      return {validUrl: validatedFields.data.url, error: null};
-    } else {
-      return {validUrl: null, error: null}; // Not an error, just invalid
-    }
+    const validUrls = result.validatedUrls
+      .filter(item => item.isValid)
+      .map(item => item.originalUrl);
+
+    return {validUrls, errors: null};
   } catch (e) {
     console.error(e);
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
     return {
-      validUrl: null,
-      error: `An error occurred while validating ${url}.`,
+      validUrls: [],
+      errors: [`An error occurred during validation: ${errorMessage}`],
     };
   }
 }

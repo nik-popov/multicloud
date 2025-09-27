@@ -1,7 +1,7 @@
 
 'use client';
 
-import {validateUrlAction} from '@/app/actions';
+import {validateUrlsAction} from '@/app/actions';
 import {Alert, AlertDescription} from '@/components/ui/alert';
 import {Button} from '@/components/ui/button';
 import {
@@ -46,33 +46,42 @@ export function UrlProcessor({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const {toast} = useToast();
   
-  const processUrls = (urlsToValidate: string[]) => {
+   const processUrls = (urlsToValidate: string[]) => {
     if (!urlsToValidate || urlsToValidate.length === 0) {
       setError('Please enter at least one URL or select files.');
       return;
     }
-    
+
     onProcessStart();
     setError(null);
-    
-    startTransition(async () => {
-      const totalUrls = urlsToValidate.length;
-      const allUrls: string[] = [];
 
-      for (let i = 0; i < totalUrls; i++) {
-        const url = urlsToValidate[i];
-        const result = await validateUrlAction(url);
-        if (result.validUrl) {
-          allUrls.push(result.validUrl);
-        }
-        if (result.error) {
-          setError(prev => (prev ? `${prev}\n${result.error}` : result.error));
-        }
-        onProgress(((i + 1) / totalUrls) * 100);
+    let progressInterval: NodeJS.Timeout | null = null;
+
+    // Simulate progress
+    onProgress(0);
+    let progress = 0;
+    progressInterval = setInterval(() => {
+      progress += 1;
+      onProgress(progress);
+      if (progress >= 95) { // Stop at 95% to wait for completion
+        if (progressInterval) clearInterval(progressInterval);
       }
-      onProcessComplete(allUrls);
+    }, 100); // Adjust time for smoother progress
+
+    startTransition(async () => {
+      const result = await validateUrlsAction(urlsToValidate);
+      
+      if (progressInterval) clearInterval(progressInterval);
+      onProgress(100);
+
+      if (result.errors) {
+        setError(result.errors.join('\n'));
+        onProcessComplete([]);
+      } else {
+        onProcessComplete(result.validUrls);
+      }
     });
-  }
+  };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
