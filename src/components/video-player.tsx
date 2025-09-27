@@ -37,26 +37,18 @@ export function VideoPlayer({
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          if (videoRef.current) {
-            // For focus view, respect the isPlaying state.
-            // For grid view, always attempt to play.
-            if (isFocusView) {
-              if (isPlaying) {
-                videoRef.current.play().catch(() => {});
-              } else {
-                videoRef.current.pause();
-              }
-            } else {
-              videoRef.current.play().catch(() => {});
-            }
-          }
+          setIsPlaying(true);
+          videoRef.current?.play().catch(() => {
+             // Autoplay was prevented.
+          });
         } else {
-          if (videoRef.current) {
-            videoRef.current.pause();
-          }
+          setIsPlaying(false);
+          videoRef.current?.pause();
         }
       },
-      { threshold: 0.5 } // Trigger when 50% of the video is visible
+      {
+        threshold: 0.5, // 50% of element is visible
+      }
     );
 
     const currentRef = containerRef.current;
@@ -69,7 +61,7 @@ export function VideoPlayer({
         observer.unobserve(currentRef);
       }
     };
-  }, [isPlaying, isFocusView]);
+  }, []); // Empty dependency array ensures this runs only once.
 
   useEffect(() => {
     if (videoRef.current) {
@@ -153,6 +145,7 @@ export function VideoPlayer({
             loop
             muted
             playsInline
+            autoPlay
          />
        </div>
     );
@@ -187,6 +180,7 @@ export function VideoPlayer({
             loop
             muted
             playsInline
+            autoPlay={!isFocusView}
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
