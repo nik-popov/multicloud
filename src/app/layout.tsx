@@ -3,8 +3,8 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'VideoBucket',
-  description: 'Validate, clean, and manage video URLs with AI.',
+  title: 'bulkshorts',
+  description: 'The fastest way to discover and browse short-form video content.',
 };
 
 export default function RootLayout({

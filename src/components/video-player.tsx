@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart } from 'lucide-react';
+import { Heart, MousePointer } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useRef, useState, useEffect } from 'react';
@@ -54,71 +54,49 @@ export function VideoPlayer({
   };
 
   return (
-    <div className="w-full relative group">
+    <div className="w-full relative group flex items-center justify-center">
       <Card
         className={cn(
-          'shadow-lg overflow-hidden transition-all duration-300 w-full rounded-2xl',
-          isFocusView ? 'bg-black' : 'cursor-pointer hover:scale-105'
+          'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl',
+          isFocusView
+            ? 'bg-black'
+            : 'cursor-pointer hover:scale-105 w-full aspect-[9/16]'
         )}
         onClick={!isFocusView ? onClick : undefined}
       >
-        <CardContent className="p-0">
+        <CardContent className="p-0 h-full">
           <div
             className={cn(
-              'relative w-full bg-black rounded-lg overflow-hidden',
-              isFocusView ? 'h-full' : 'aspect-[9/16]'
+              'relative w-full bg-black rounded-lg overflow-hidden h-full'
             )}
-            style={
-              isFocusView ? { height: 'calc(100svh - 4rem)' } : {}
-            }
             onMouseMove={isFocusView ? handleMouseMove : undefined}
           >
             <video
               ref={videoRef}
               src={src}
               className="w-full h-full object-contain"
-              style={{ aspectRatio }}
+              style={{
+                aspectRatio: isFocusView
+                  ? aspectRatio
+                  : undefined,
+              }}
               autoPlay
               loop
               muted
               playsInline
               onLoadedMetadata={handleLoadedMetadata}
             />
+            {isFocusView && (
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center text-white/70 text-xs font-semibold animate-pulse">
+                <MousePointer className="h-4 w-4 mr-2" />
+                <span>Move mouse to scrub video</span>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
       {isFocusView && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-4">
-          <div className="flex items-center gap-2 text-white">
-            <p className="font-bold">@creator</p>
-            <p>Video description...</p>
-          </div>
-          <div className="w-full text-white space-y-2">
-            <div className="flex items-center gap-4 text-sm">
-              <Label
-                htmlFor="speed-control"
-                className="text-white/80 flex-shrink-0"
-              >
-                Speed
-              </Label>
-              <Slider
-                id="speed-control"
-                min={0.5}
-                max={2}
-                step={0.1}
-                value={[playbackRate]}
-                onValueChange={handlePlaybackRateChange}
-                className="flex-1"
-              />
-              <span className="font-mono w-10 text-right">
-                {playbackRate.toFixed(1)}x
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-      {isFocusView && (
-        <div className="absolute top-4 right-4">
+        <div className="absolute right-[-80px] flex flex-col items-center gap-4 p-4">
           <Button
             variant="ghost"
             size="icon"
@@ -126,6 +104,34 @@ export function VideoPlayer({
           >
             <Heart className="h-6 w-6" />
           </Button>
+        </div>
+      )}
+      {isFocusView && (
+        <div className="absolute left-[-220px] w-[200px] text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
+           <div className="flex items-center gap-2 text-white mb-4">
+            <p className="font-bold">@creator</p>
+            <p className='text-sm text-white/80 truncate'>Video description...</p>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Label
+              htmlFor="speed-control"
+              className="text-white/80 flex-shrink-0"
+            >
+              Speed
+            </Label>
+            <Slider
+              id="speed-control"
+              min={0.5}
+              max={2}
+              step={0.1}
+              value={[playbackRate]}
+              onValueChange={handlePlaybackRateChange}
+              className="flex-1"
+            />
+            <span className="font-mono w-10 text-right">
+              {playbackRate.toFixed(1)}x
+            </span>
+          </div>
         </div>
       )}
     </div>
