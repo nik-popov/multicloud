@@ -1,0 +1,9 @@
+import * as React from "react";
+import { Heart, Library, MousePointer } from 'lucide-react';
+const LucideIcon = React.forwardRef<
+  SVGSVGElement,
+  React.ComponentProps<"svg">
+>(({ ...props }, ref) => {
+  return <svg ref={ref} {...props} />;
+});
+export { LucideIcon as default, Heart, Library, MousePointer };

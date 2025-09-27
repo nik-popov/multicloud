@@ -187,11 +187,10 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
           <form onSubmit={handleSubmit} ref={formRef}>
             <CardHeader>
               <CardTitle className="text-center text-3xl">
-                Your Hub for Short-Form Content
+                Bulk Video Discovery
               </CardTitle>
               <CardDescription className="text-center">
-                Paste video URLs or upload files. Our AI will validate them and
-                create your discovery grid.
+                Paste a list of video URLs or upload files to instantly create a browsable grid of short-form content.
               </CardDescription>
             </CardHeader>
             <CardContent>

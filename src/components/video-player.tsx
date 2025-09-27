@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, MousePointer } from 'lucide-react';
+import { Heart, Library, MousePointer } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useRef, useState, useEffect } from 'react';
@@ -104,13 +104,20 @@ export function VideoPlayer({
         </div>
       )}
       {isFocusView && (
-        <div className="absolute right-[-80px] flex flex-col items-center gap-4 p-4">
+        <div className="absolute right-[-100px] flex flex-col items-center gap-4 p-4">
           <Button
             variant="ghost"
             size="icon"
             className="text-white hover:text-red-500 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
           >
             <Heart className="h-6 w-6" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:text-primary hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+          >
+            <Library className="h-6 w-6" />
           </Button>
           <div className="w-[80px] text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
             <div className="flex flex-col items-center gap-2 text-sm">
