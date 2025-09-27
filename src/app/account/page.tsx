@@ -10,16 +10,17 @@ import { useEffect, useState } from 'react';
 import { getFavorites } from '@/lib/firestore';
 import { Heart, Loader2 } from 'lucide-react';
 import { VideoCard } from '@/components/video-card';
-import { VideoGrid } from '@/components/video-grid';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type HistoryItem = {
   timestamp: string;
   urls: string[];
 };
 
-export default function AccountPage() {
+function AccountPageContent() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -80,6 +81,11 @@ export default function AccountPage() {
           </Link>
         </div>
          <div className="flex items-center gap-2">
+            {!isMobile && (
+              <Button variant="secondary" asChild>
+                <Link href="/discover">New Batch</Link>
+              </Button>
+            )}
             <Button onClick={signOut}>
               Log Out
             </Button>
@@ -176,5 +182,13 @@ export default function AccountPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense>
+      <AccountPageContent />
+    </Suspense>
   );
 }

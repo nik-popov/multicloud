@@ -22,11 +22,6 @@ function DiscoverPageContent() {
           </Link>
         </div>
         <div className="flex items-center gap-2">
-            {!isMobile && (
-              <Button variant="secondary" asChild>
-                <Link href="/discover">New Batch</Link>
-              </Button>
-            )}
              {user && !loading ? (
               <>
                 <Button variant="outline" asChild>
@@ -68,7 +63,7 @@ function DiscoverPageContent() {
 
 export default function DiscoverPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense>
       <DiscoverPageContent />
     </Suspense>
   );

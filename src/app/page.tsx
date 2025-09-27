@@ -5,18 +5,17 @@ import {Button} from '@/components/ui/button';
 import {VideoGrid} from '@/components/video-grid';
 import {Heart, Search} from 'lucide-react';
 import Link from 'next/link';
-import {useEffect, useState} from 'react';
+import {useEffect, useState, Suspense} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 
 import {useIsMobile} from '@/hooks/use-mobile';
 import {Input} from '@/components/ui/input';
-import {Card} from '@/components/ui/card';
 import {VideoCard} from '@/components/video-card';
 import {Loader2} from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { getFavorites, saveFavorites, migrateFavorites } from '@/lib/firestore';
 
-export default function Home() {
+function HomePageContent() {
   const [currentUrls, setCurrentUrls] = useState<string[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [favorites, setFavoritesState] = useState<string[]>([]);
@@ -80,6 +79,7 @@ export default function Home() {
 
   useEffect(() => {
     async function loadUserData() {
+      setIsLoading(true);
       if (user) {
         // Migrate local favorites to Firestore on login
         await migrateFavorites(user.uid);
@@ -99,13 +99,12 @@ export default function Home() {
   }, [user, authLoading]);
   
    useEffect(() => {
-    // This effect runs once on initial mount to load history and set loading state
+    // This effect runs once on initial mount to load history
     const storedHistory = localStorage.getItem('bulkshorts_history');
     if (storedHistory) {
       setHistory(JSON.parse(storedHistory));
     }
-    setIsLoading(authLoading); // Page is loading if auth is loading
-  }, []); // Empty dependency array ensures this runs only once
+  }, []); 
 
 
   const handleToggleFavorite = (url: string) => {
@@ -168,7 +167,7 @@ export default function Home() {
   };
 
   const renderContent = () => {
-    if (isLoading) {
+    if (isLoading || authLoading) {
        return (
         <div className="flex flex-col items-center justify-center h-full pt-20">
           <div className="text-center w-full max-w-md mx-auto space-y-4">
@@ -183,7 +182,7 @@ export default function Home() {
       const urlsForGrid = viewMode === 'favorites' ? favorites : currentUrls;
 
       return (
-        <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+        <div className="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8">
           <VideoGrid
             urls={urlsForGrid}
             favorites={favorites}
@@ -307,12 +306,16 @@ export default function Home() {
               </>
             ) : (
               <>
-                <Button variant="ghost" asChild>
-                    <Link href="/login">Log In</Link>
-                </Button>
-                <Button asChild>
-                    <Link href="/signup">Sign Up</Link>
-                </Button>
+                {!authLoading && (
+                  <>
+                    <Button variant="ghost" asChild>
+                        <Link href="/login">Log In</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/signup">Sign Up</Link>
+                    </Button>
+                  </>
+                )}
               </>
             )}
           </div>
@@ -331,5 +334,13 @@ export default function Home() {
           </footer>
         )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense>
+      <HomePageContent />
+    </Suspense>
   );
 }

@@ -6,7 +6,6 @@ import {VideoPlayer} from './video-player';
 import {ArrowLeft, ChevronDown, ChevronUp} from 'lucide-react';
 import {useMemo, useEffect, useRef, useCallback} from 'react';
 import {Button} from './ui/button';
-import {Separator} from './ui/separator';
 import { VideoCard } from './video-card';
 import { Card, CardContent } from './ui/card';
 import { Label } from './ui/label';
@@ -74,10 +73,6 @@ export function VideoGrid({
   const handleBackToGrid = () => {
     onBackToGrid();
   };
-  
-  const currentBatchTimestamp =
-    history.find(batch => JSON.stringify(batch.urls) === JSON.stringify(urls.slice(0, batch.urls.length)))
-      ?.timestamp;
       
   const loadedTimestamps = useMemo(() => {
     const timestamps = new Set<string>();
@@ -285,7 +280,7 @@ export function VideoGrid({
                 }
                 scrollControls={
                   <div className="flex flex-col items-center gap-4">
-                    {orderedUrls.length > 1 && (
+                    {orderedUrls.indexOf(url) > 0 && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -295,7 +290,7 @@ export function VideoGrid({
                         <ChevronUp className="h-6 w-6" />
                       </Button>
                     )}
-                    {orderedUrls.length > 1 && (
+                     {orderedUrls.indexOf(url) < orderedUrls.length - 1 && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -320,7 +315,7 @@ export function VideoGrid({
       {viewMode === 'favorites' ? (
         <h2 className="text-2xl font-bold text-center mb-8">My Favorites</h2>
       ) : null }
-      <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8">
           <div className="sticky top-4 h-min hidden md:block">
             <Card className="p-4 bg-card/80 backdrop-blur-sm">
               <CardContent className="p-0">
@@ -330,7 +325,7 @@ export function VideoGrid({
           </div>
         <div
           ref={scrollContainerRef}
-          className={cn("grid gap-4 md:gap-6", `grid-cols-2 md:grid-cols-${gridSize}`)}
+          className={cn("grid gap-4 md:gap-6", `grid-cols-2 lg:grid-cols-${gridSize}`)}
         >
           {urls.map(url => (
             <div key={url} id={`video-wrapper-${safeId(url)}`} className="w-full">

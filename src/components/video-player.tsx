@@ -177,41 +177,34 @@ export function VideoPlayer({
 
   return (
     <div className="w-full h-full relative group flex items-center justify-center">
-        <div className="flex items-center justify-center h-full w-full">
+        <div className="flex flex-col md:flex-row items-center justify-center h-full w-full gap-4">
           <div className="w-full md:w-auto h-full flex items-center justify-center">
               {videoElement}
           </div>
         
-          <div className="absolute right-4 bottom-4 md:relative md:bottom-auto md:right-auto w-auto md:w-[200px] flex flex-col items-center gap-4">
+          <div className="absolute right-4 bottom-4 md:static flex flex-row md:flex-col items-center gap-4">
             {scrollControls}
             <Button
               variant="ghost"
               size="icon"
               onClick={onToggleLike}
-              className="text-white hover:text-red-500 bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+              className="text-white hover:text-red-500 bg-black/50 hover:bg-black/50 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
             >
-              <Heart className={cn("h-6 w-6", isLiked && "fill-red-500")} />
+              <Heart className={cn("h-6 w-6", isLiked && "fill-red-500 text-red-500")} />
             </Button>
             <Button
               variant="ghost"
               size="icon"
               onClick={handleToggleMute}
-              className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+              className="text-white hover:text-primary bg-black/50 hover:bg-black/50 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
             >
               {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
-            >
-              <Library className="h-6 w-6" />
-            </Button>
-              <Button
-              variant="ghost"
-              size="icon"
               onClick={handleFullscreen}
-              className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+              className="text-white hover:text-primary bg-black/50 hover:bg-black/50 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
             >
               <Fullscreen className="h-6 w-6" />
             </Button>
@@ -220,7 +213,7 @@ export function VideoPlayer({
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+                        className="text-white hover:text-primary bg-black/50 hover:bg-black/50 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
                     >
                         <Settings className="h-6 w-6" />
                     </Button>
