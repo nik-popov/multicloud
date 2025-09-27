@@ -39,7 +39,6 @@ export function VideoPlayer({
         if (entry.isIntersecting) {
           if (videoRef.current) {
             videoRef.current.play().catch(() => {
-              // Autoplay was prevented. User interaction might be needed.
               setIsPlaying(false);
             });
           }
@@ -50,21 +49,22 @@ export function VideoPlayer({
         }
       },
       {
-        threshold: isHistoryCard ? 0.8 : 0.5,
+        threshold: 0.8,
       }
     );
 
     const currentRef = containerRef.current;
-    if (currentRef) {
+    if (currentRef && isHistoryCard) {
       observer.observe(currentRef);
     }
 
     return () => {
-      if (currentRef) {
+      if (currentRef && isHistoryCard) {
         observer.unobserve(currentRef);
       }
     };
   }, [isHistoryCard]);
+
 
   useEffect(() => {
     if (videoRef.current) {
@@ -168,6 +168,7 @@ export function VideoPlayer({
             loop
             muted
             playsInline
+            autoPlay={!isHistoryCard}
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
