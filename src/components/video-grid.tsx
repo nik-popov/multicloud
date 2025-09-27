@@ -2,11 +2,12 @@
 'use client';
 import {cn} from '@/lib/utils';
 import {VideoPlayer} from './video-player';
-import {ArrowLeft, ChevronDown, ChevronUp} from 'lucide-react';
+import {ArrowLeft, ChevronDown, ChevronUp, Settings} from 'lucide-react';
 import {useMemo, useEffect, useRef} from 'react';
 import {Button} from './ui/button';
 import {Separator} from './ui/separator';
 import { VideoCard } from './video-card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 
 type VideoGridProps = {
   urls: string[];
@@ -23,7 +24,10 @@ type VideoGridProps = {
   viewMode?: 'main' | 'favorites';
 };
 
-const safeId = (id: string) => id.replace(/[^a-zA-Z0-9-_]/g, '_');
+const safeId = (id: string) => id.replace(/[^a-zA-Z0-9-_]/g, (match) => {
+    return `_${match.charCodeAt(0)}`;
+});
+
 
 export function VideoGrid({
   urls,
@@ -105,17 +109,34 @@ export function VideoGrid({
   if (view === 'focus') {
     return (
       <div className="fixed inset-0 bg-black z-50">
-        <div className="fixed top-4 left-4 z-[60] flex flex-col gap-4">
+        <div className="fixed top-4 left-4 z-[60] flex flex-col items-start gap-4">
           <Button
-            variant="secondary"
+            variant="ghost"
+            size="icon"
             onClick={handleBackToGrid}
             aria-label="Back to grid"
-            className="bg-card/50 backdrop-blur-sm"
+            className="bg-black/30 text-white hover:bg-black/50 hover:text-white backdrop-blur-sm rounded-full w-12 h-12"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Grid
+            <ArrowLeft className="h-6 w-6" />
           </Button>
-          <div className="w-[200px] hidden md:block">{controls}</div>
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="secondary" className="bg-card/50 backdrop-blur-sm">
+                <Settings className="mr-2 h-4 w-4" />
+                Advanced
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px] bg-card/80 backdrop-blur-md border-white/20">
+              <DialogHeader>
+                <DialogTitle>Advanced Controls</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                {controls}
+              </div>
+            </DialogContent>
+          </Dialog>
+
         </div>
          {orderedUrls.length > 1 && (
           <div
