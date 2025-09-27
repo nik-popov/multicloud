@@ -4,10 +4,9 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth }from 'firebase/auth';
 
 const firebaseConfig = {
-  projectId: "studio-7015657083-f6ef1",
-  appId: "1:592726576875:web:4c323c6ee848d7a10378ae",
-  apiKey: "AIzaSyAFQv9JXIt9x-ni1ggP7j7uJRAzIKLm1hs",
-  authDomain: "studio-7015657083-f6ef1.firebaseapp.com",
+  projectId: "studio-1789539808-2f8a9",
+  apiKey: "AIzaSyCZQI-bU0XrCsmHT1XGNnbYWw7-Jw6DIpU",
+  authDomain: "studio-1789539808-2f8a9.firebaseapp.com",
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
