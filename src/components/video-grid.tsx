@@ -2,7 +2,6 @@
 import { cn } from '@/lib/utils';
 import { VideoPlayer } from './video-player';
 import { ChevronDown } from 'lucide-react';
-import { useEffect, useState } from 'react';
 
 type VideoGridProps = {
     urls: string[];
@@ -12,30 +11,7 @@ type VideoGridProps = {
 };
 
 export function VideoGrid({ urls, view, onSelectVideo, gridCols = 4 }: VideoGridProps) {
-    const [renderedUrls, setRenderedUrls] = useState<string[]>([]);
     const isGridView = view === 'grid';
-
-    useEffect(() => {
-        if (isGridView) {
-            setRenderedUrls([]);
-            const timer = setInterval(() => {
-                setRenderedUrls(prevUrls => {
-                    const nextIndex = prevUrls.length;
-                    if (nextIndex < urls.length) {
-                        return [...prevUrls, urls[nextIndex]];
-                    } else {
-                        clearInterval(timer);
-                        return prevUrls;
-                    }
-                });
-            }, 150); 
-            return () => clearInterval(timer);
-        } else {
-            setRenderedUrls(urls);
-        }
-    }, [urls, isGridView]);
-
-    const displayUrls = isGridView ? renderedUrls : urls;
 
     return (
         <div>
@@ -49,7 +25,7 @@ export function VideoGrid({ urls, view, onSelectVideo, gridCols = 4 }: VideoGrid
                 )}
                 style={isGridView ? { gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` } : {}}
             >
-            {displayUrls.map((url, index) => (
+            {urls.map((url, index) => (
                 <div 
                     key={index} 
                     className={cn(
