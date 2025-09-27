@@ -56,17 +56,18 @@ export function VideoPlayer({
 
   useEffect(() => {
     if (videoRef.current) {
-      if (isVisible && (isFocusView || isPlaying)) {
-        videoRef.current.play().catch(() => {
-          // auto-play was prevented
-        });
-        if (!isFocusView) setIsPlaying(true);
+      if (isVisible) {
+        if(isFocusView) {
+          if (isPlaying) videoRef.current.play().catch(()=>{});
+          else videoRef.current.pause();
+        } else {
+           videoRef.current.play().catch(()=>{});
+        }
       } else {
         videoRef.current.pause();
-        if (!isFocusView) setIsPlaying(false);
       }
     }
-  }, [isVisible, isFocusView]);
+  }, [isVisible, isPlaying, isFocusView]);
 
 
   useEffect(() => {
@@ -180,7 +181,7 @@ export function VideoPlayer({
               'w-full h-full',
               isFocusView ? 'object-contain' : 'object-cover'
             )}
-            autoPlay={isFocusView || isPlaying}
+            autoPlay={isFocusView ? isPlaying : true}
             loop
             muted
             playsInline
@@ -223,35 +224,37 @@ export function VideoPlayer({
   }
 
   return (
-    <div className="flex items-center justify-center h-full p-0 m-0 w-screen" ref={containerRef}>
-        <div className="w-[200px] flex flex-col items-center gap-4">
-          <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-2 text-sm">
-              <Label
-                htmlFor="speed-control"
-                className="text-white/80 flex-shrink-0"
-              >
-                Speed
-              </Label>
-              <Slider
-                id="speed-control"
-                min={0.5}
-                max={2}
-                step={0.1}
-                value={[playbackRate]}
-                onValueChange={handlePlaybackRateChange}
-                className="w-full"
-              />
-              <span className="font-mono text-xs">
-                {playbackRate.toFixed(1)}x
-              </span>
+    <div className="flex items-center justify-center h-full w-full" ref={containerRef}>
+        <div className="w-[200px] flex-col items-center gap-4 hidden md:flex">
+            <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-2 text-sm">
+                    <Label
+                    htmlFor="speed-control"
+                    className="text-white/80 flex-shrink-0"
+                    >
+                    Speed
+                    </Label>
+                    <Slider
+                    id="speed-control"
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                    value={[playbackRate]}
+                    onValueChange={handlePlaybackRateChange}
+                    className="w-full"
+                    />
+                    <span className="font-mono text-xs">
+                    {playbackRate.toFixed(1)}x
+                    </span>
+                </div>
             </div>
-          </div>
         </div>
       
-        {videoElement}
+        <div className="w-full md:w-auto h-full flex items-center justify-center">
+            {videoElement}
+        </div>
       
-        <div className="w-[200px] flex flex-col items-center gap-4">
+        <div className="w-[200px] flex-col items-center gap-4 hidden md:flex">
           <div className="text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm w-full">
             <p className="font-bold">@creatorname</p>
             <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
