@@ -56,6 +56,15 @@ export function VideoGrid({
     batch => batch.timestamp !== currentBatchTimestamp
   );
   
+  const handleScrollDown = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollBy({
+        top: scrollContainerRef.current.clientHeight,
+        behavior: 'smooth',
+      });
+    }
+  };
+  
   if (view === 'focus') {
     return (
       <div className="relative">
@@ -87,7 +96,10 @@ export function VideoGrid({
           ))}
         </div>
         {urls.length > 1 && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white pointer-events-none z-10">
+          <div
+            onClick={handleScrollDown}
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white z-10 cursor-pointer"
+          >
             <span className="text-sm uppercase tracking-widest">Scroll</span>
             <ChevronDown className="animate-bounce h-6 w-6" />
           </div>
