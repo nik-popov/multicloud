@@ -88,12 +88,12 @@ export function VideoPlayer({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
-      <div className={cn("flex items-center justify-center", isFocusView ? "w-auto max-w-sm" : "w-full h-full")}>
+      <div className={cn("flex items-center justify-center w-full", isFocusView ? 'h-full' : '')}>
         <Card
           className={cn(
             'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl h-full',
             isFocusView
-              ? 'bg-black w-full'
+              ? 'bg-black w-auto max-w-sm'
               : 'cursor-pointer hover:scale-105 w-full'
           )}
           style={{aspectRatio: isFocusView ? aspectRatio : '9/16'}}
