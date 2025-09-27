@@ -23,6 +23,8 @@ type VideoGridProps = {
   viewMode?: 'main' | 'favorites';
 };
 
+const safeId = (id: string) => id.replace(/[^a-zA-Z0-9-_]/g, '_');
+
 export function VideoGrid({
   urls,
   selectedUrl,
@@ -68,7 +70,7 @@ export function VideoGrid({
 
   useEffect(() => {
     if (view === 'focus' && selectedUrl) {
-      const targetElement = document.getElementById(`video-wrapper-${CSS.escape(selectedUrl)}`);
+      const targetElement = document.getElementById(`video-wrapper-${safeId(selectedUrl)}`);
       if (targetElement) {
         targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
       }
@@ -132,7 +134,7 @@ export function VideoGrid({
           {orderedUrls.map(url => (
             <div
               key={url}
-              id={`video-wrapper-${CSS.escape(url)}`}
+              id={`video-wrapper-${safeId(url)}`}
               className="snap-start h-full w-full flex items-center justify-center"
             >
               <VideoPlayer
@@ -164,7 +166,7 @@ export function VideoGrid({
         className={cn("grid gap-4 md:gap-6", `grid-cols-2 md:grid-cols-${gridCols}`)}
       >
         {urls.map(url => (
-          <div key={url} id={`video-wrapper-${CSS.escape(url)}`} className="w-full">
+          <div key={url} id={`video-wrapper-${safeId(url)}`} className="w-full">
             <VideoCard
               src={url}
               onClick={() => handleSelectVideo(url)}
