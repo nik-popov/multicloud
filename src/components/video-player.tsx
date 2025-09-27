@@ -98,16 +98,13 @@ export function VideoPlayer({
           </div>
         </CardContent>
       </Card>
+      
       {isFocusView && (
-        <div className="absolute left-[-220px] w-[200px] text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
-           <div className="flex items-center gap-2 text-white mb-4">
+        <div className="absolute right-[-220px] w-[200px] flex flex-col items-center gap-4 p-4">
+          <div className="text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm w-full">
             <p className="font-bold">@creator</p>
-            <p className='text-sm text-white/80 truncate'>Video description...</p>
+            <p className='text-sm text-white/80'>Video description...</p>
           </div>
-        </div>
-      )}
-      {isFocusView && (
-        <div className="absolute right-[-100px] flex flex-col items-center gap-4 p-4">
           <Button
             variant="ghost"
             size="icon"
@@ -122,7 +119,7 @@ export function VideoPlayer({
           >
             <Library className="h-6 w-6" />
           </Button>
-          <div className="w-[80px] text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
+          <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
             <div className="flex flex-col items-center gap-2 text-sm">
               <Label
                 htmlFor="speed-control"
