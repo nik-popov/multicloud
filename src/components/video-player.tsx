@@ -32,14 +32,31 @@ export function VideoPlayer({
   const [showHeart, setShowHeart] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(!isFocusView);
-  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        setIsVisible(entry.isIntersecting);
+        if (entry.isIntersecting) {
+          if (videoRef.current) {
+            // For focus view, respect the isPlaying state.
+            // For grid view, always attempt to play.
+            if (isFocusView) {
+              if (isPlaying) {
+                videoRef.current.play().catch(() => {});
+              } else {
+                videoRef.current.pause();
+              }
+            } else {
+              videoRef.current.play().catch(() => {});
+            }
+          }
+        } else {
+          if (videoRef.current) {
+            videoRef.current.pause();
+          }
+        }
       },
-      { threshold: 0.5 } // Play when 50% of the video is visible
+      { threshold: 0.5 } // Trigger when 50% of the video is visible
     );
 
     const currentRef = containerRef.current;
@@ -52,23 +69,7 @@ export function VideoPlayer({
         observer.unobserve(currentRef);
       }
     };
-  }, []);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      if (isVisible) {
-         if (isFocusView) {
-            if(isPlaying) videoRef.current.play().catch(() => {});
-            else videoRef.current.pause();
-         } else {
-           videoRef.current.play().catch(() => {});
-         }
-      } else {
-        videoRef.current.pause();
-      }
-    }
-  }, [isVisible, isPlaying, isFocusView]);
-
+  }, [isPlaying, isFocusView]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -103,14 +104,6 @@ export function VideoPlayer({
           } else {
             setAspectRatio('9/16');
           }
-      }
-      // Start playing for all non-focus views if visible
-      if (isVisible) {
-        if (!isFocusView) {
-          videoRef.current.play().catch(() => {});
-        } else if (isPlaying) {
-          videoRef.current.play().catch(() => {});
-        }
       }
     }
   };
@@ -154,9 +147,9 @@ export function VideoPlayer({
     return (
        <div className="w-full h-full" ref={containerRef}>
          <video
+            ref={videoRef}
             src={src}
             className='w-full h-full object-cover'
-            autoPlay={isVisible}
             loop
             muted
             playsInline
@@ -293,5 +286,7 @@ export function VideoPlayer({
     </div>
   );
 }
+
+    
 
     
