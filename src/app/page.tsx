@@ -66,6 +66,7 @@ function HomePageContent() {
             return updatedHistory;
           });
         }
+        // Use replace to remove the query param from the URL without reloading
         router.replace('/', undefined);
       } catch (e) {
         console.error('Failed to parse URLs from query param', e);
@@ -74,39 +75,44 @@ function HomePageContent() {
     }
   }, [user, router]);
 
+
+  // Effect for handling URL parameters
   useEffect(() => {
     const urlsParam = searchParams.get('urls');
     if (urlsParam) {
-      handleUrlParam(urlsParam);
+        setIsLoading(true); // Show loader while processing URLs
+        handleUrlParam(urlsParam);
+        setIsLoading(false); // Hide loader after processing
     }
   }, [searchParams, handleUrlParam]);
 
-
+  // Effect for loading initial data from storage
   useEffect(() => {
     async function loadInitialData() {
-      setIsLoading(true);
-      if (user) {
-        await migrateFavorites(user.uid);
-        await migrateHistory(user.uid);
-        const [dbFavorites, dbHistory] = await Promise.all([
-            getFavorites(user.uid),
-            getHistory(user.uid)
-        ]);
-        setFavoritesState(dbFavorites);
-        setHistory(dbHistory);
-      } else {
-        const localFavorites = localStorage.getItem('bulkshorts_favorites');
-        setFavoritesState(localFavorites ? JSON.parse(localFavorites) : []);
-        const localHistory = localStorage.getItem('bulkshorts_history');
-        setHistory(localHistory ? JSON.parse(localHistory) : []);
-      }
-      setIsLoading(false);
+        setIsLoading(true);
+        if (user) {
+            await migrateFavorites(user.uid);
+            await migrateHistory(user.uid);
+            const [dbFavorites, dbHistory] = await Promise.all([
+                getFavorites(user.uid),
+                getHistory(user.uid)
+            ]);
+            setFavoritesState(dbFavorites);
+            setHistory(dbHistory);
+        } else {
+            const localFavorites = localStorage.getItem('bulkshorts_favorites');
+            setFavoritesState(localFavorites ? JSON.parse(localFavorites) : []);
+            const localHistory = localStorage.getItem('bulkshorts_history');
+            setHistory(localHistory ? JSON.parse(localHistory) : []);
+        }
+        setIsLoading(false);
     }
     
-    if (!authLoading) {
-      loadInitialData();
+    // Only run if auth is resolved and there are no URL params to process
+    if (!authLoading && !searchParams.get('urls')) {
+        loadInitialData();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, searchParams]);
 
   const handleToggleFavorite = (url: string) => {
     if (!user) {
