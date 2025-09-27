@@ -15,6 +15,7 @@ type VideoPlayerProps = {
   isLiked?: boolean;
   onToggleLike?: () => void;
   controls?: React.ReactNode;
+  scrollControls?: React.ReactNode;
 };
 
 export function VideoPlayer({
@@ -22,6 +23,7 @@ export function VideoPlayer({
   isLiked = false,
   onToggleLike = () => {},
   controls,
+  scrollControls,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -222,6 +224,7 @@ export function VideoPlayer({
           </div>
         
           <div className="absolute right-4 bottom-4 md:relative md:bottom-auto md:right-auto w-auto md:w-[200px] flex flex-col items-center gap-4">
+            {scrollControls}
             <Button
               variant="ghost"
               size="icon"

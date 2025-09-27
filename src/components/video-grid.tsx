@@ -218,15 +218,6 @@ export function VideoGrid({
             <ArrowLeft className="h-6 w-6" />
           </Button>
         </div>
-         {orderedUrls.length > 1 && (
-          <div
-            onClick={handleScrollUp}
-            className="fixed top-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white z-[60] cursor-pointer"
-          >
-            <ChevronUp className="animate-bounce h-6 w-6" />
-            <span className="text-sm uppercase tracking-widest hidden md:inline">Scroll</span>
-          </div>
-        )}
         <div
           ref={scrollContainerRef}
           data-focus-view-container
@@ -245,19 +236,34 @@ export function VideoGrid({
                 controls={
                   <Controls />
                 }
+                scrollControls={
+                  <div className="flex flex-col items-center gap-4">
+                    {orderedUrls.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleScrollUp}
+                        className="text-white hover:text-primary bg-black/50 md:bg-transparent hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+                      >
+                        <ChevronUp className="h-6 w-6" />
+                      </Button>
+                    )}
+                    {orderedUrls.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleScrollDown}
+                        className="text-white hover:text-primary bg-black/50 md:bg-transparent hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+                      >
+                        <ChevronDown className="h-6 w-6" />
+                      </Button>
+                    )}
+                  </div>
+                }
               />
             </div>
           ))}
         </div>
-        {orderedUrls.length > 1 && (
-          <div
-            onClick={handleScrollDown}
-            className="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white z-[60] cursor-pointer"
-          >
-            <span className="text-sm uppercase tracking-widest hidden md:inline">Scroll</span>
-            <ChevronDown className="animate-bounce h-6 w-6" />
-          </div>
-        )}
       </div>
     );
   }
