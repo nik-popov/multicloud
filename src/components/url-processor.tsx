@@ -60,8 +60,14 @@ export function UrlProcessor() {
   const handleSelectVideo = (url: string) => {
     setSelectedUrl(url);
     setView('focus');
-    resultRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+  
+  useEffect(() => {
+    if (view === 'focus' && selectedUrl) {
+      const element = document.getElementById(`video-wrapper-${selectedUrl}`);
+      element?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }
+  }, [view, selectedUrl]);
 
   const handleBackToGrid = () => {
     setView('grid');
@@ -69,7 +75,9 @@ export function UrlProcessor() {
   }
 
   const orderedUrls = useMemo(() => {
-    if (!selectedUrl || !state.data) return state.data;
+    if (!state.data) return [];
+    if (!selectedUrl) return state.data;
+    
     const urls = [...state.data];
     const index = urls.indexOf(selectedUrl);
     if (index > -1) {
@@ -114,14 +122,14 @@ export function UrlProcessor() {
         )}
 
 
-      <div ref={resultRef}>
+      <div ref={resultRef} className="relative">
         {hasUrls && (
-          <div className='relative space-y-4'>
+          <div className='space-y-4'>
              {view === 'focus' && (
               <Button
                 variant="secondary"
                 onClick={handleBackToGrid}
-                className="absolute -top-12 left-0"
+                className="fixed top-4 left-4 z-50"
                 aria-label="Back to grid"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
