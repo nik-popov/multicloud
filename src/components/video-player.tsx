@@ -178,47 +178,6 @@ export function VideoPlayer({
   return (
     <div className="w-full h-full relative group flex items-center justify-center">
         <div className="flex items-center justify-center h-full w-full">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 md:relative md:top-auto md:left-auto md:-translate-y-0 w-auto md:w-[200px] flex-col items-center gap-4 hidden md:flex z-10">
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-white hover:text-primary bg-black/50 md:bg-transparent hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
-                        >
-                            <Settings className="h-6 w-6" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent side="left" className="w-auto bg-black/50 backdrop-blur-md border-white/20 text-white md:bg-card/80">
-                        <div className="w-56 space-y-4">
-                        {controls}
-                        <div className="w-full text-white space-y-2">
-                            <div className="flex flex-col items-center gap-2 text-sm">
-                                <Label
-                                htmlFor="speed-control"
-                                className="text-white/80 flex-shrink-0"
-                                >
-                                Video Speed
-                                </Label>
-                                <Slider
-                                id="speed-control"
-                                min={0.5}
-                                max={2}
-                                step={0.1}
-                                value={[playbackRate]}
-                                onValueChange={handlePlaybackRateChange}
-                                className="w-full"
-                                />
-                                <span className="font-mono text-xs">
-                                {playbackRate.toFixed(1)}x
-                                </span>
-                            </div>
-                        </div>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-            </div>
-        
           <div className="w-full md:w-auto h-full flex items-center justify-center">
               {videoElement}
           </div>

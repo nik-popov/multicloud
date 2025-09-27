@@ -80,7 +80,7 @@ export default function Home() {
   };
   
   const loadBatchFromHistory = (urls: string[]) => {
-    setCurrentUrls(urls);
+    setCurrentUrls(prevUrls => [...prevUrls, ...urls]);
     setViewMode('main');
     setFocusViewActive(false);
     setSelectedUrlForFocus(null);
@@ -117,7 +117,10 @@ export default function Home() {
             isProcessing={isProcessing}
             processingProgress={processingProgress}
             history={history}
-            loadBatch={loadBatchFromHistory}
+            loadBatch={(urls: string[]) => {
+              setCurrentUrls(urls);
+              setIsProcessing(false);
+            }}
           />
       );
     }
@@ -159,7 +162,10 @@ export default function Home() {
             isProcessing={isProcessing}
             processingProgress={processingProgress}
             history={history}
-            loadBatch={loadBatchFromHistory}
+            loadBatch={(urls: string[]) => {
+              setCurrentUrls(urls);
+              setIsProcessing(false);
+            }}
           />
        </div>
     );

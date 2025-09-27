@@ -3,7 +3,7 @@
 import {cn} from '@/lib/utils';
 import {VideoPlayer} from './video-player';
 import {ArrowLeft, ChevronDown, ChevronUp} from 'lucide-react';
-import {useMemo, useEffect, useRef} from 'react';
+import {useMemo, useEffect, useRef, useCallback} from 'react';
 import {Button} from './ui/button';
 import {Separator} from './ui/separator';
 import { VideoCard } from './video-card';
@@ -58,6 +58,7 @@ export function VideoGrid({
 }: VideoGridProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const loaderRef = useRef<HTMLDivElement | null>(null);
 
   const view = selectedUrl ? 'focus' : 'grid';
 
@@ -72,6 +73,59 @@ export function VideoGrid({
   const handleBackToGrid = () => {
     onBackToGrid();
   };
+  
+  const currentBatchTimestamp =
+    history.find(batch => JSON.stringify(batch.urls) === JSON.stringify(urls.slice(0, batch.urls.length)))
+      ?.timestamp;
+      
+  const loadedTimestamps = useMemo(() => {
+    const timestamps = new Set<string>();
+    let currentUrlsIndex = 0;
+    history.forEach(batch => {
+      const batchUrls = batch.urls;
+      if (currentUrlsIndex + batchUrls.length <= urls.length) {
+        const sliceOfUrls = urls.slice(currentUrlsIndex, currentUrlsIndex + batchUrls.length);
+        if (JSON.stringify(sliceOfUrls) === JSON.stringify(batchUrls)) {
+          timestamps.add(batch.timestamp);
+          currentUrlsIndex += batchUrls.length;
+        }
+      }
+    });
+    return timestamps;
+  }, [urls, history]);
+
+
+  const otherHistory = history.filter(
+    batch => !loadedTimestamps.has(batch.timestamp)
+  );
+  
+  const handleLoadNextBatch = useCallback(() => {
+    if (otherHistory.length > 0) {
+      loadBatch(otherHistory[0].urls);
+    }
+  }, [otherHistory, loadBatch]);
+  
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && view === 'grid') {
+          handleLoadNextBatch();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    const loader = loaderRef.current;
+    if (loader) {
+      observer.observe(loader);
+    }
+
+    return () => {
+      if (loader) {
+        observer.unobserve(loader);
+      }
+    };
+  }, [handleLoadNextBatch, view]);
 
   const orderedUrls = useMemo(() => {
     if (!selectedUrl || view === 'grid') return urls;
@@ -118,14 +172,6 @@ export function VideoGrid({
       }
     };
   }, [isAutoScrolling, view, scrollSpeed, scrollContainerRef]);
-
-
-  const currentBatchTimestamp =
-    history.find(batch => JSON.stringify(batch.urls) === JSON.stringify(urls))
-      ?.timestamp;
-  const otherHistory = history.filter(
-    batch => batch.timestamp !== currentBatchTimestamp
-  );
 
   const handleScrollDown = () => {
     if (scrollContainerRef.current) {
@@ -295,18 +341,7 @@ export function VideoGrid({
         </div>
       </div>
       {otherHistory.length > 0 && view === 'grid' && (
-        <div className="mt-16 text-center">
-          <Separator className="my-8" />
-          <h3 className="text-xl font-semibold mb-2">
-            Next Batch: {new Date(otherHistory[0].timestamp).toLocaleString()}
-          </h3>
-          <p className="text-muted-foreground mb-4">
-            {otherHistory[0].urls.length} videos
-          </p>
-          <Button onClick={() => loadBatch(otherHistory[0].urls)}>
-            Load Next Batch
-          </Button>
-        </div>
+        <div ref={loaderRef} className="h-10" />
       )}
     </div>
   );
