@@ -80,16 +80,13 @@ function HomePageContent() {
   useEffect(() => {
     const urlsParam = searchParams.get('urls');
     if (urlsParam) {
-        setIsLoading(true); // Show loader while processing URLs
         handleUrlParam(urlsParam);
-        setIsLoading(false); // Hide loader after processing
     }
   }, [searchParams, handleUrlParam]);
 
   // Effect for loading initial data from storage
   useEffect(() => {
     async function loadInitialData() {
-        setIsLoading(true);
         if (user) {
             await migrateFavorites(user.uid);
             await migrateHistory(user.uid);
@@ -108,11 +105,11 @@ function HomePageContent() {
         setIsLoading(false);
     }
     
-    // Only run if auth is resolved and there are no URL params to process
-    if (!authLoading && !searchParams.get('urls')) {
+    // Only run after auth has resolved.
+    if (!authLoading) {
         loadInitialData();
     }
-  }, [user, authLoading, searchParams]);
+  }, [user, authLoading]);
 
   const handleToggleFavorite = (url: string) => {
     if (!user) {
