@@ -22,7 +22,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-body antialiased bg-background text-foreground h-full overflow-hidden">
+      <body className="font-body antialiased bg-background text-foreground h-full">
         {children}
         <Toaster />
       </body>

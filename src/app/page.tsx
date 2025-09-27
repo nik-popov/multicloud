@@ -152,7 +152,7 @@ export default function Home() {
         <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
           {viewMode === 'favorites' && (
             <h2 className="text-3xl font-bold text-center mb-8">
-              My Collection
+              My Favorites
             </h2>
           )}
           <VideoGrid
@@ -268,13 +268,13 @@ export default function Home() {
               disabled={favorites.length === 0}
             >
               <Heart className="mr-2" />
-              Collection ({favorites.length})
+              Favorites ({favorites.length})
             </Button>
           </div>
         </header>
       )}
 
-      <main className="flex-grow overflow-y-auto">{renderContent()}</main>
+      <main className="flex-grow">{renderContent()}</main>
       
       {showFooter && (
           <footer className="flex items-center justify-center p-4 border-t">

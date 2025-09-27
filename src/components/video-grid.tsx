@@ -192,7 +192,7 @@ export function VideoGrid({
   };
 
   const Controls = () => (
-     <div className="flex flex-col gap-4 text-white">
+     <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between w-full">
             <Label

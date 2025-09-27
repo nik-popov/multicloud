@@ -27,7 +27,7 @@ function DiscoverPageContent() {
             )}
             <Button variant="outline" disabled>
                 <Heart className="mr-2" />
-                Collection (0)
+                Favorites (0)
             </Button>
         </div>
       </header>
