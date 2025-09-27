@@ -19,7 +19,12 @@ import {Slider} from './ui/slider';
 import {Label} from './ui/label';
 import {Switch} from './ui/switch';
 
-export function UrlProcessor() {
+type UrlProcessorProps = {
+  showForm: boolean;
+  onProcessStart: () => void;
+};
+
+export function UrlProcessor({ showForm, onProcessStart }: UrlProcessorProps) {
   const [urls, setUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'grid' | 'focus'>('grid');
@@ -35,6 +40,16 @@ export function UrlProcessor() {
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const hasUrls = urls.length > 0;
+
+  useEffect(() => {
+    if (showForm) {
+      setUrls([]);
+      setError(null);
+      setView('grid');
+      setSelectedUrl(null);
+    }
+  }, [showForm]);
+
 
   useEffect(() => {
     if (isAutoScrolling && view === 'grid') {
@@ -56,6 +71,7 @@ export function UrlProcessor() {
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    onProcessStart();
     const formData = new FormData(event.currentTarget);
     const urlsToValidate = (formData.get('urls') as string)
       ?.split('\n')
@@ -68,8 +84,7 @@ export function UrlProcessor() {
 
     setUrls([]);
     setError(null);
-    resultRef.current?.scrollIntoView({behavior: 'smooth'});
-
+    
     startTransition(async () => {
       for (const url of urlsToValidate) {
         const result = await validateUrlAction(url);
@@ -96,8 +111,14 @@ export function UrlProcessor() {
 
   return (
     <div className="space-y-8">
-      {!hasUrls && !isPending && (
-        <Card className="w-full shadow-lg max-w-3xl mx-auto bg-card/80 backdrop-blur-sm">
+      {showForm && !isPending && (
+        <Card className="w-full shadow-lg max-w-3xl mx-auto bg-card/80 backdrop-blur-sm mt-12">
+           <header className="mb-12 text-center pt-8">
+            <p className="mt-4 text-lg text-muted-foreground px-4">
+              The fastest way to validate, clean, and discover short-form video content with the
+              power of AI.
+            </p>
+          </header>
           <form onSubmit={handleSubmit} ref={formRef}>
             <CardHeader>
               <CardTitle>URL Validator</CardTitle>
@@ -154,7 +175,7 @@ export function UrlProcessor() {
         {hasUrls && (
           <div className="space-y-4">
             {view === 'grid' && (
-              <div className="fixed top-4 left-4 z-50 flex flex-col gap-4">
+              <div className="fixed top-24 left-4 z-50 flex flex-col gap-4">
                 <Card className="p-3 bg-card/80 backdrop-blur-sm">
                   <CardContent className="p-0 flex flex-col items-center gap-2">
                     <Label
@@ -216,7 +237,7 @@ export function UrlProcessor() {
               <Button
                 variant="secondary"
                 onClick={handleBackToGrid}
-                className="fixed top-4 left-4 z-50"
+                className="fixed top-24 left-4 z-50"
                 aria-label="Back to grid"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
