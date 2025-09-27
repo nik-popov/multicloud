@@ -31,23 +31,26 @@ export function VideoPlayer({
   const [aspectRatio, setAspectRatio] = useState('9/16');
   const [showHeart, setShowHeart] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isPlaying, setIsPlaying] = useState(!isFocusView);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setIsPlaying(true);
-          videoRef.current?.play().catch(() => {
-             // Autoplay was prevented.
-          });
+          if (videoRef.current) {
+            videoRef.current.play().catch(() => {
+              // Autoplay was prevented. User interaction might be needed.
+              setIsPlaying(false);
+            });
+          }
         } else {
-          setIsPlaying(false);
-          videoRef.current?.pause();
+          if (videoRef.current) {
+            videoRef.current.pause();
+          }
         }
       },
       {
-        threshold: 0.5, // 50% of element is visible
+        threshold: isHistoryCard ? 0.8 : 0.5,
       }
     );
 
@@ -61,14 +64,14 @@ export function VideoPlayer({
         observer.unobserve(currentRef);
       }
     };
-  }, []); // Empty dependency array ensures this runs only once.
+  }, [isHistoryCard]);
 
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.playbackRate = playbackRate;
     }
   }, [playbackRate]);
-
+  
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!videoRef.current || !isFocusView) return;
     const { left, width } = e.currentTarget.getBoundingClientRect();
@@ -135,29 +138,14 @@ export function VideoPlayer({
     }
   };
 
-  if (isHistoryCard) {
-    return (
-       <div className="w-full h-full" ref={containerRef}>
-         <video
-            ref={videoRef}
-            src={src}
-            className='w-full h-full object-cover'
-            loop
-            muted
-            playsInline
-            autoPlay
-         />
-       </div>
-    );
-  }
-  
   const videoElement = (
     <Card
       className={cn(
         'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl',
         isFocusView
           ? 'bg-black w-auto h-full'
-          : 'cursor-pointer hover:scale-105 w-full bg-card h-full'
+          : 'cursor-pointer hover:scale-105 w-full bg-card h-full',
+        isHistoryCard && 'cursor-pointer hover:scale-105 w-full bg-card h-full'
       )}
       style={{aspectRatio: isFocusView ? aspectRatio : '9/16'}}
       onClick={handleVideoClick}
@@ -180,7 +168,6 @@ export function VideoPlayer({
             loop
             muted
             playsInline
-            autoPlay={!isFocusView}
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
@@ -197,7 +184,7 @@ export function VideoPlayer({
               <Heart className="h-24 w-24 text-white/90 animate-in fade-in zoom-in-125 fill-red-500/80 duration-500" />
             </div>
           )}
-            {isLiked && !isFocusView && (
+            {isLiked && !isFocusView && !isHistoryCard && (
             <div className="absolute top-2 right-2 pointer-events-none">
               <Heart className="h-6 w-6 text-red-500 fill-red-500" />
             </div>
@@ -280,7 +267,3 @@ export function VideoPlayer({
     </div>
   );
 }
-
-    
-
-    
