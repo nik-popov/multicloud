@@ -22,6 +22,8 @@ export function VideoPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [aspectRatio, setAspectRatio] = useState('9/16');
+  const [isLiked, setIsLiked] = useState(false);
+  const [showHeart, setShowHeart] = useState(false);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -52,6 +54,22 @@ export function VideoPlayer({
       }
     }
   };
+  
+  const handleDoubleClick = () => {
+    if (!isFocusView) return;
+    const newLikedState = !isLiked;
+    setIsLiked(newLikedState);
+    if (newLikedState) {
+      setShowHeart(true);
+      setTimeout(() => {
+        setShowHeart(false);
+      }, 1000);
+    }
+  };
+  
+  const toggleLike = () => {
+    setIsLiked(!isLiked);
+  }
 
   return (
     <div className="w-full relative group flex items-center justify-center">
@@ -63,6 +81,7 @@ export function VideoPlayer({
             : 'cursor-pointer hover:scale-105 w-full aspect-[9/16]'
         )}
         onClick={!isFocusView ? onClick : undefined}
+        onDoubleClick={handleDoubleClick}
       >
         <CardContent className="p-0 h-full">
           <div
@@ -89,8 +108,13 @@ export function VideoPlayer({
               playsInline
               onLoadedMetadata={handleLoadedMetadata}
             />
+             {showHeart && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <Heart className="h-24 w-24 text-white/90 animate-in fade-in zoom-in-125 fill-red-500/80 duration-500" />
+              </div>
+            )}
             {isFocusView && (
-              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center text-white/70 text-xs font-semibold animate-pulse">
+              <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center text-white/70 text-xs font-semibold animate-pulse group-hover:opacity-0 transition-opacity">
                 <MousePointer className="h-4 w-4 mr-2" />
                 <span>Move mouse to scrub video</span>
               </div>
@@ -102,15 +126,16 @@ export function VideoPlayer({
       {isFocusView && (
         <div className="absolute right-[-220px] w-[200px] flex flex-col items-center gap-4 p-4">
           <div className="text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm w-full">
-            <p className="font-bold">@creator</p>
-            <p className='text-sm text-white/80'>Video description...</p>
+            <p className="font-bold">@creatorname</p>
+            <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
           </div>
           <Button
             variant="ghost"
             size="icon"
+            onClick={toggleLike}
             className="text-white hover:text-red-500 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
           >
-            <Heart className="h-6 w-6" />
+            <Heart className={cn("h-6 w-6", isLiked && "fill-red-500")} />
           </Button>
           <Button
             variant="ghost"
