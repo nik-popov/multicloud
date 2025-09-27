@@ -20,7 +20,7 @@ type VideoPlayerProps = {
 
 export function VideoPlayer({
   src,
-  isLiked = false,
+  isLiked: initialIsLiked = false,
   onToggleLike = () => {},
   controls,
   scrollControls,
@@ -31,7 +31,12 @@ export function VideoPlayer({
   const [showHeart, setShowHeart] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [isLiked, setIsLiked] = useState(initialIsLiked);
 
+  useEffect(() => {
+    setIsLiked(initialIsLiked);
+  }, [initialIsLiked]);
+  
   useEffect(() => {
     if (videoRef.current) {
         // Start playing the video when the component mounts
@@ -96,14 +101,20 @@ export function VideoPlayer({
     }
   };
   
-  const handleDoubleClick = () => {
+  const handleToggleLike = () => {
+    const newLikedState = !isLiked;
+    setIsLiked(newLikedState);
     onToggleLike();
-    if (!isLiked) {
-      setShowHeart(true);
-      setTimeout(() => {
-        setShowHeart(false);
-      }, 1000);
+    if (newLikedState) {
+        setShowHeart(true);
+        setTimeout(() => {
+            setShowHeart(false);
+        }, 1000);
     }
+  };
+  
+  const handleDoubleClick = () => {
+    handleToggleLike();
   };
   
   const handleFullscreen = () => {
@@ -187,7 +198,7 @@ export function VideoPlayer({
             <Button
               variant="ghost"
               size="icon"
-              onClick={onToggleLike}
+              onClick={handleToggleLike}
               className="text-white hover:text-red-500 bg-black/50 hover:bg-black/50 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
             >
               <Heart className={cn("h-6 w-6", isLiked && "fill-red-500 text-red-500")} />
