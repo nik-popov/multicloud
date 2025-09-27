@@ -16,6 +16,8 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useActionState, useState, useMemo } from 'react';
 import { useFormStatus } from 'react-dom';
 import { VideoGrid } from './video-grid';
+import { Slider } from './ui/slider';
+import { Label } from './ui/label';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -38,6 +40,7 @@ export function UrlProcessor() {
   const [state, formAction] = useActionState(validateUrlsAction, initialState);
   const [view, setView] = useState<'grid' | 'focus'>('grid');
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
+  const [gridSize, setGridSize] = useState(4);
   
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -113,7 +116,7 @@ export function UrlProcessor() {
 
       <div ref={resultRef}>
         {hasUrls && (
-          <div className='relative'>
+          <div className='relative space-y-4'>
              {view === 'focus' && (
               <Button
                 variant="secondary"
@@ -125,7 +128,23 @@ export function UrlProcessor() {
                 Back to Grid
               </Button>
             )}
-            <VideoGrid urls={orderedUrls ?? []} view={view} onSelectVideo={handleSelectVideo} />
+            {view === 'grid' && (
+              <div className="max-w-xs mx-auto space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="grid-size">Grid Size</Label>
+                  <span className="text-sm font-medium">{gridSize} Columns</span>
+                </div>
+                <Slider
+                  id="grid-size"
+                  min={1}
+                  max={8}
+                  step={1}
+                  value={[gridSize]}
+                  onValueChange={(value) => setGridSize(value[0])}
+                />
+              </div>
+            )}
+            <VideoGrid urls={orderedUrls ?? []} view={view} onSelectVideo={handleSelectVideo} gridCols={gridSize} />
           </div>
         )}
       </div>
