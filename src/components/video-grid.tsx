@@ -3,8 +3,8 @@ import {cn} from '@/lib/utils';
 import {VideoPlayer} from './video-player';
 import {ChevronDown} from 'lucide-react';
 import {useMemo, useEffect, useRef} from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
-import { Button } from './ui/button';
+import {Card, CardHeader, CardTitle, CardContent} from './ui/card';
+import {Button} from './ui/button';
 
 type VideoGridProps = {
   urls: string[];
@@ -23,7 +23,7 @@ export function VideoGrid({
   onSelectVideo,
   gridCols = 4,
   history = [],
-  loadBatch
+  loadBatch,
 }: VideoGridProps) {
   const isGridView = view === 'grid';
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -46,9 +46,12 @@ export function VideoGrid({
     }
   }, [view, selectedUrl]);
 
-  const currentBatchTimestamp = history.find(batch => JSON.stringify(batch.urls) === JSON.stringify(urls))?.timestamp;
-  const otherHistory = history.filter(batch => batch.timestamp !== currentBatchTimestamp);
-
+  const currentBatchTimestamp =
+    history.find(batch => JSON.stringify(batch.urls) === JSON.stringify(urls))
+      ?.timestamp;
+  const otherHistory = history.filter(
+    batch => batch.timestamp !== currentBatchTimestamp
+  );
 
   return (
     <div>
@@ -84,24 +87,32 @@ export function VideoGrid({
             />
           </div>
         ))}
-        {otherHistory.length > 0 && (
-           <div className={cn('w-full', !isGridView && 'snap-start h-screen flex items-center justify-center')}>
-            <Card className="max-w-lg mx-auto">
-              <CardHeader>
-                <CardTitle>Continue Browsing?</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <p className="text-muted-foreground">You've reached the end of this batch. Select another batch from your history to continue.</p>
-                {otherHistory.slice(0, 5).map((batch) => (
-                   <Button key={batch.timestamp} variant="secondary" onClick={() => loadBatch(batch.urls)}>
-                     {new Date(batch.timestamp).toLocaleString()} ({batch.urls.length} videos)
-                   </Button>
-                ))}
-              </CardContent>
-            </Card>
-           </div>
-        )}
       </div>
+      {otherHistory.length > 0 && isGridView && (
+        <div className="mt-16">
+          <Card className="max-w-lg mx-auto">
+            <CardHeader>
+              <CardTitle>Continue Browsing?</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-4">
+              <p className="text-muted-foreground">
+                You've reached the end of this batch. Select another batch from
+                your history to continue.
+              </p>
+              {otherHistory.slice(0, 5).map(batch => (
+                <Button
+                  key={batch.timestamp}
+                  variant="secondary"
+                  onClick={() => loadBatch(batch.urls)}
+                >
+                  {new Date(batch.timestamp).toLocaleString()} ({batch.urls.length}{' '}
+                  videos)
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
       {!isGridView && urls.length > 1 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white pointer-events-none z-10">
           <span className="text-sm uppercase tracking-widest">Scroll</span>
