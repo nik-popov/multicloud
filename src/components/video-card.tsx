@@ -10,12 +10,14 @@ type VideoCardProps = {
   src: string;
   onClick?: () => void;
   isLiked?: boolean;
+  isHistoryCard?: boolean;
 };
 
 export function VideoCard({
   src,
   onClick,
   isLiked = false,
+  isHistoryCard = false,
 }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,6 +47,18 @@ export function VideoCard({
       }
     };
   }, []);
+  
+  useEffect(() => {
+    if (isHistoryCard && videoRef.current) {
+       const playPromise = videoRef.current.play();
+       if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Autoplay was prevented.
+        });
+       }
+    }
+  }, [isHistoryCard]);
+
 
   return (
     <div
@@ -67,6 +81,7 @@ export function VideoCard({
               loop
               muted
               playsInline
+              autoPlay={!isHistoryCard}
             />
             {isLiked && (
               <div className="absolute top-2 right-2 pointer-events-none">

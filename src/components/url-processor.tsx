@@ -21,6 +21,7 @@ import {Label} from './ui/label';
 import {Switch} from './ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { VideoCard } from './video-card';
+import { Progress } from '@/components/ui/progress';
 
 type UrlProcessorProps = {
   showForm: boolean;
@@ -52,6 +53,7 @@ export function UrlProcessor({
   const [isPending, startTransition] = useTransition();
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(5);
+  const [progress, setProgress] = useState(0);
 
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
@@ -135,20 +137,23 @@ export function UrlProcessor({
     onProcessStart();
     setUrls([]);
     setError(null);
-    const validUrls: string[] = [];
+    setProgress(0);
     
     startTransition(async () => {
-      const allUrls = [];
-      for (const url of urlsToValidate) {
+      const totalUrls = urlsToValidate.length;
+      const allUrls: string[] = [];
+
+      for (let i = 0; i < totalUrls; i++) {
+        const url = urlsToValidate[i];
         const result = await validateUrlAction(url);
         if (result.validUrl) {
           allUrls.push(result.validUrl);
           setUrls(prev => [...prev, result.validUrl!]);
-          validUrls.push(result.validUrl);
         }
         if (result.error) {
           setError(prev => (prev ? `${prev}\n${result.error}` : result.error));
         }
+        setProgress(((i + 1) / totalUrls) * 100);
       }
       saveToHistory(allUrls);
     });
@@ -348,7 +353,7 @@ export function UrlProcessor({
                           <h3 className="font-bold text-white text-lg">{new Date(batch.timestamp).toLocaleDateString()}</h3>
                           <p className="text-white/80 text-sm">{batch.urls.length} videos</p>
                       </div>
-                      <VideoCard src={batch.urls[0]} />
+                      <VideoCard src={batch.urls[0]} isHistoryCard={true}/>
                     </div>
                   ))}
                 </div>
@@ -358,9 +363,10 @@ export function UrlProcessor({
       )}
 
       {isPending && !hasUrls && (
-        <div className="text-center">
+        <div className="text-center w-full max-w-md mx-auto space-y-4">
           <Loader2 className="mr-2 h-8 w-8 animate-spin inline-block" />
           <p>Validating URLs...</p>
+          <Progress value={progress} />
         </div>
       )}
 
