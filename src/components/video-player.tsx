@@ -43,7 +43,7 @@ export function VideoPlayer({
   };
 
   const handleLoadedMetadata = () => {
-    if (videoRef.current) {
+    if (videoRef.current && isFocusView) {
       const { videoWidth, videoHeight } = videoRef.current;
       if (videoWidth > videoHeight) {
         setAspectRatio('16/9');
@@ -74,11 +74,14 @@ export function VideoPlayer({
             <video
               ref={videoRef}
               src={src}
-              className="w-full h-full object-contain"
+              className={cn(
+                'w-full h-full',
+                isFocusView ? 'object-contain' : 'object-cover'
+              )}
               style={{
                 aspectRatio: isFocusView
                   ? aspectRatio
-                  : undefined,
+                  : '9 / 16',
               }}
               autoPlay
               loop
