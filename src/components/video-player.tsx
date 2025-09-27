@@ -75,19 +75,19 @@ export function VideoPlayer({
 
   return (
     <div 
-      className="w-full relative group flex items-center justify-center" 
+      className="w-full h-full relative group flex items-center justify-center" 
       ref={containerRef}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
       <Card
         className={cn(
-          'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl',
+          'shadow-lg overflow-hidden transition-all duration-300 rounded-2xl h-full',
           isFocusView
-            ? 'bg-black'
+            ? 'bg-black w-auto'
             : 'cursor-pointer hover:scale-105 w-full'
         )}
-        style={isFocusView ? {} : {aspectRatio: '9/16'}}
+        style={isFocusView ? {aspectRatio: aspectRatio} : {aspectRatio: '9/16'}}
         onClick={!isFocusView ? onClick : undefined}
         onDoubleClick={handleDoubleClick}
       >
