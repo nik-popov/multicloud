@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {Textarea} from '@/components/ui/textarea';
-import {ArrowLeft, Loader2, Upload} from 'lucide-react';
+import {Loader2, Upload} from 'lucide-react';
 import {useEffect, useRef, useState, useTransition} from 'react';
 import {VideoGrid} from './video-grid';
 import {Slider} from './ui/slider';
@@ -335,19 +335,18 @@ export function UrlProcessor({
                 <h2 className="text-2xl font-bold text-center">History</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {history.map((batch, index) => (
-                    <Card key={index} className="bg-card/80 backdrop-blur-sm hover:border-primary transition-colors flex flex-col">
-                      <CardHeader className="flex-grow">
-                        <CardTitle className="text-lg">{new Date(batch.timestamp).toLocaleString()}</CardTitle>
-                        <CardDescription>{batch.urls.length} videos</CardDescription>
-                      </CardHeader>
-                      <CardContent className="h-48 w-full p-0 overflow-hidden rounded-t-lg">
-                        <VideoPlayer src={batch.urls[0]} isFocusView={false} />
+                    <Card key={index}
+                      className="group relative overflow-hidden rounded-lg shadow-lg cursor-pointer transition-transform duration-300 ease-in-out hover:scale-105"
+                      onClick={() => loadBatch(batch.urls)}
+                    >
+                      <div className="absolute inset-0 bg-black/50 transition-opacity duration-300 group-hover:bg-black/20 z-10" />
+                      <div className="absolute bottom-0 left-0 p-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <h3 className="font-bold text-white text-lg">{new Date(batch.timestamp).toLocaleDateString()}</h3>
+                          <p className="text-white/80 text-sm">{batch.urls.length} videos</p>
+                      </div>
+                      <CardContent className="h-full w-full p-0">
+                        <VideoPlayer src={batch.urls[0]} isFocusView={false} isHistoryCard />
                       </CardContent>
-                      <CardFooter>
-                        <Button variant="secondary" onClick={() => loadBatch(batch.urls)}>
-                          Load Batch
-                        </Button>
-                      </CardFooter>
                     </Card>
                   ))}
                 </div>

@@ -12,23 +12,24 @@ type VideoPlayerProps = {
   src: string;
   onClick?: () => void;
   isFocusView?: boolean;
-  isLiked: boolean;
-  onToggleLike: () => void;
+  isLiked?: boolean;
+  onToggleLike?: () => void;
+  isHistoryCard?: boolean;
 };
 
 export function VideoPlayer({
   src,
   onClick,
   isFocusView = false,
-  isLiked,
-  onToggleLike
+  isLiked = false,
+  onToggleLike = () => {},
+  isHistoryCard = false,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [aspectRatio, setAspectRatio] = useState('9/16');
   const [showHeart, setShowHeart] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isHovering, setIsHovering] = useState(false);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -79,12 +80,25 @@ export function VideoPlayer({
     }
   };
 
+  if (isHistoryCard) {
+    return (
+       <div className="w-full h-full">
+         <video
+            src={src}
+            className='w-full h-full object-cover'
+            autoPlay
+            loop
+            muted
+            playsInline
+         />
+       </div>
+    );
+  }
+
   return (
     <div 
       className="w-full h-full relative group flex items-center justify-center" 
       ref={containerRef}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
     >
       <div className={cn("flex items-center justify-center w-auto", isFocusView ? 'h-full' : 'w-full')}>
         <Card
@@ -145,7 +159,7 @@ export function VideoPlayer({
       </div>
       
       {isFocusView && (
-        <div className="absolute left-full ml-4 w-[200px] flex flex-col items-center gap-4 p-4">
+        <div className="absolute left-full w-[200px] flex flex-col items-center gap-4 p-4">
           <div className="text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm w-full">
             <p className="font-bold">@creatorname</p>
             <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
