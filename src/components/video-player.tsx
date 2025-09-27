@@ -65,6 +65,19 @@ export function VideoPlayer({
     }
   };
 
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!videoRef.current) return;
+    const { left, width } = e.currentTarget.getBoundingClientRect();
+    if (width === 0) return;
+    const x = e.touches[0].clientX - left;
+    const percentage = x / width;
+    const newTime = videoRef.current.duration * percentage;
+
+    if (isFinite(newTime)) {
+      videoRef.current.currentTime = newTime;
+    }
+  };
+
   const handlePlaybackRateChange = (value: number[]) => {
     const newRate = value[0];
     setPlaybackRate(newRate);
@@ -129,6 +142,7 @@ export function VideoPlayer({
         <div
           className='relative w-full bg-black rounded-lg overflow-hidden h-full'
           onMouseMove={handleMouseMove}
+          onTouchMove={handleTouchMove}
         >
           <video
             ref={videoRef}
@@ -212,10 +226,6 @@ export function VideoPlayer({
           </div>
         
           <div className="absolute right-4 bottom-4 md:relative md:bottom-auto md:right-auto w-auto md:w-[200px] flex flex-col items-center gap-4">
-            <div className="text-white space-y-2 p-4 bg-black/50 md:bg-black/20 rounded-lg backdrop-blur-sm w-full hidden md:block">
-              <p className="font-bold">@creatorname</p>
-              <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
-            </div>
             <Button
               variant="ghost"
               size="icon"
@@ -247,8 +257,48 @@ export function VideoPlayer({
             >
               <Fullscreen className="h-6 w-6" />
             </Button>
+             <Popover>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+                    >
+                        <Settings className="h-6 w-6" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent side="left" className="w-auto bg-black/50 backdrop-blur-md border-white/20 text-white md:bg-card/80">
+                    <div className="w-56 space-y-4">
+                    {controls}
+                    <div className="w-full text-white space-y-2">
+                        <div className="flex flex-col items-center gap-2 text-sm">
+                            <Label
+                            htmlFor="speed-control"
+                            className="text-white/80 flex-shrink-0"
+                            >
+                            Video Speed
+                            </Label>
+                            <Slider
+                            id="speed-control"
+                            min={0.5}
+                            max={2}
+                            step={0.1}
+                            value={[playbackRate]}
+                            onValueChange={handlePlaybackRateChange}
+                            className="w-full"
+                            />
+                            <span className="font-mono text-xs">
+                            {playbackRate.toFixed(1)}x
+                            </span>
+                        </div>
+                    </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
           </div>
         </div>
     </div>
   );
 }
+
+    
