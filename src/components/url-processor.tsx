@@ -12,8 +12,8 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2 } from 'lucide-react';
-import { useEffect, useRef, useActionState } from 'react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { VideoGrid } from './video-grid';
 
@@ -36,6 +36,8 @@ function SubmitButton() {
 export function UrlProcessor() {
   const initialState: ValidationState = { data: null, error: null };
   const [state, formAction] = useActionState(validateUrlsAction, initialState);
+  const [view, setView] = useState<'grid' | 'focus'>('grid');
+  
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
@@ -45,10 +47,20 @@ export function UrlProcessor() {
     if (state.data) {
       if (state.data.length > 0) {
         formRef.current?.reset();
+        setView('grid');
       }
       resultRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [state.data]);
+  
+  const handleSelectVideo = () => {
+    setView('focus');
+    resultRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleBackToGrid = () => {
+    setView('grid');
+  }
 
   return (
     <div className="space-y-8">
@@ -86,7 +98,22 @@ export function UrlProcessor() {
 
 
       <div ref={resultRef}>
-        {hasUrls && <VideoGrid urls={state.data} />}
+        {hasUrls && (
+          <div className='relative'>
+             {view === 'focus' && (
+              <Button
+                variant="secondary"
+                onClick={handleBackToGrid}
+                className="absolute -top-12 left-0"
+                aria-label="Back to grid"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Grid
+              </Button>
+            )}
+            <VideoGrid urls={state.data} view={view} onSelectVideo={handleSelectVideo} />
+          </div>
+        )}
       </div>
     </div>
   );

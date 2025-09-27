@@ -5,13 +5,15 @@ import {
 
 type VideoPlayerProps = {
   src: string;
+  onClick?: () => void;
 };
 
 export function VideoPlayer({
-  src
+  src,
+  onClick
 }: VideoPlayerProps) {
   return (
-    <Card className="shadow-lg overflow-hidden">
+    <Card className="shadow-lg overflow-hidden cursor-pointer" onClick={onClick}>
       <CardContent className="p-0">
         <div className="relative aspect-[9/16] w-full">
           <video
