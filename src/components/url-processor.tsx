@@ -184,18 +184,14 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
     <div className="space-y-8">
       {showForm && !isPending && (
         <Card className="w-full shadow-lg max-w-3xl mx-auto bg-card/80 backdrop-blur-sm mt-12">
-           <header className="mb-12 text-center pt-8">
-            <p className="mt-4 text-lg text-muted-foreground px-4">
-              The fastest way to validate, clean, and discover short-form video content with the
-              power of AI.
-            </p>
-          </header>
           <form onSubmit={handleSubmit} ref={formRef}>
             <CardHeader>
-              <CardTitle>URL Validator</CardTitle>
-              <CardDescription>
-                Paste your list of video URLs below, or upload files from your computer. Our AI will validate them
-                and create a discovery grid.
+              <CardTitle className="text-center text-3xl">
+                Your Hub for Short-Form Content
+              </CardTitle>
+              <CardDescription className="text-center">
+                Paste video URLs or upload files. Our AI will validate them and
+                create your discovery grid.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -264,9 +260,10 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
         {hasUrls && (
           <div className="space-y-4">
             {view === 'grid' && (
-              <div className="fixed top-24 left-4 z-50 flex flex-col gap-4">
+               <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-4">
+               <div className="flex flex-col gap-4 sticky top-24 h-min">
                 <Card className="p-3 bg-card/80 backdrop-blur-sm">
-                  <CardContent className="p-0 flex flex-col items-center gap-2">
+                  <CardContent className="p-0 flex flex-row md:flex-col items-center gap-2">
                     <Label
                       htmlFor="auto-scroll"
                       className="text-sm font-medium"
@@ -281,7 +278,7 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
                     />
                   </CardContent>
                 </Card>
-                <Card className="p-3 bg-card/80 backdrop-blur-sm max-w-[200px]">
+                <Card className="p-3 bg-card/80 backdrop-blur-sm max-w-[200px] w-full">
                   <CardContent className="p-0 space-y-2">
                     <div className="flex justify-between items-center gap-4">
                       <Label htmlFor="grid-size" className="flex-shrink-0">
@@ -299,7 +296,7 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
                     />
                   </CardContent>
                 </Card>
-                <Card className="p-3 bg-card/80 backdrop-blur-sm max-w-[200px]">
+                <Card className="p-3 bg-card/80 backdrop-blur-sm max-w-[200px] w-full">
                   <CardContent className="p-0 space-y-2">
                     <div className="flex justify-between items-center gap-4">
                       <Label
@@ -321,28 +318,39 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
                   </CardContent>
                 </Card>
               </div>
+                <VideoGrid
+                  urls={urls ?? []}
+                  view={view}
+                  selectedUrl={selectedUrl}
+                  onSelectVideo={handleSelectVideo}
+                  gridCols={gridSize}
+                  history={history}
+                  loadBatch={loadBatch}
+                />
+              </div>
             )}
-            {view === 'focus' && (
-              <Button
-                variant="secondary"
-                onClick={handleBackToGrid}
-                className="fixed top-24 left-4 z-50"
-                aria-label="Back to grid"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Grid
-              </Button>
+             {view === 'focus' && (
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={handleBackToGrid}
+                  className="fixed top-24 left-4 z-50"
+                  aria-label="Back to grid"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Grid
+                </Button>
+                <VideoGrid
+                    urls={urls ?? []}
+                    view={view}
+                    selectedUrl={selectedUrl}
+                    onSelectVideo={handleSelectVideo}
+                    gridCols={gridSize}
+                    history={history}
+                    loadBatch={loadBatch}
+                  />
+              </>
             )}
-
-            <VideoGrid
-              urls={urls ?? []}
-              view={view}
-              selectedUrl={selectedUrl}
-              onSelectVideo={handleSelectVideo}
-              gridCols={gridSize}
-              history={history}
-              loadBatch={loadBatch}
-            />
           </div>
         )}
       </div>
