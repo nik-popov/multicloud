@@ -25,13 +25,13 @@ export function VideoGrid({ urls, view, onSelectVideo, gridCols = 4 }: VideoGrid
                 )}
                 style={isGridView ? { gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` } : {}}
             >
-            {urls.map((url, index) => (
+            {urls.map((url) => (
                 <div 
                     key={url} 
                     id={`video-wrapper-${url}`}
                     className={cn(
                         "transition-opacity duration-500 w-full",
-                        !isGridView && "max-w-4xl mx-auto snap-start h-screen flex items-center justify-center",
+                        !isGridView && "max-w-md w-full mx-auto snap-start h-screen flex items-center justify-center",
                         isGridView ? "opacity-100" : ""
                     )}
                 >
@@ -44,7 +44,7 @@ export function VideoGrid({ urls, view, onSelectVideo, gridCols = 4 }: VideoGrid
             ))}
             </div>
             {!isGridView && urls.length > 1 && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white pointer-events-none">
+                <div className="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white pointer-events-none z-10">
                     <span className="text-sm uppercase tracking-widest">Scroll</span>
                     <ChevronDown className="animate-bounce h-6 w-6" />
                 </div>
