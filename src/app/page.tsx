@@ -13,6 +13,7 @@ export default function Home() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'main' | 'favorites'>('main');
   const [focusViewActive, setFocusViewActive] = useState(false);
+  const [selectedUrlForFocus, setSelectedUrlForFocus] = useState<string | null>(null);
 
   useEffect(() => {
     const storedFavorites = localStorage.getItem('bulkshorts_favorites');
@@ -27,6 +28,10 @@ export default function Home() {
         ? prev.filter(u => u !== url)
         : [...prev, url];
       localStorage.setItem('bulkshorts_favorites', JSON.stringify(newFavorites));
+      // if in favorites view and unfavoriting, update the view
+      if (viewMode === 'favorites' && !newFavorites.includes(url)) {
+        setCurrentUrls(newFavorites);
+      }
       return newFavorites;
     });
   }
@@ -35,6 +40,7 @@ export default function Home() {
     setShowProcessor(true);
     setCurrentUrls([]);
     setViewMode('main');
+    setSelectedUrlForFocus(null);
   };
 
   const handleNewBatch = () => {
@@ -42,6 +48,7 @@ export default function Home() {
     setCurrentUrls(undefined);
     setViewMode('main');
     setFocusViewActive(false);
+    setSelectedUrlForFocus(null);
   };
   
   const loadBatchFromHistory = (urls: string[]) => {
@@ -51,6 +58,7 @@ export default function Home() {
     }
     setViewMode('main');
     setFocusViewActive(false);
+    setSelectedUrlForFocus(null);
   }
 
   const showFavorites = () => {
@@ -59,36 +67,53 @@ export default function Home() {
       setShowProcessor(true);
       setViewMode('favorites');
       setFocusViewActive(false);
+      setSelectedUrlForFocus(null);
     }
   }
 
+  const handleSelectVideoForFocus = (url: string) => {
+    setSelectedUrlForFocus(url);
+    // The VideoGrid component will handle switching its internal view to 'focus'
+    // and this component will hide the header via `focusViewActive`.
+  };
+  
+  const handleBackToGrid = () => {
+    setSelectedUrlForFocus(null);
+  }
+
   const renderContent = () => {
-    if (viewMode === 'favorites') {
+    if (!currentUrls) {
       return (
-        <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
-            <h2 className="text-3xl font-bold text-center mb-8">My Collection</h2>
-            <VideoGrid
-                urls={favorites}
-                favorites={favorites}
-                onToggleFavorite={handleToggleFavorite}
-                onFocusViewChange={setFocusViewActive}
-              />
-        </div>
+         <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+            <UrlProcessor
+            showForm={!showProcessor}
+            onProcessStart={handleShowProcessor}
+            setHistory={setHistory}
+            history={history}
+            initialUrls={currentUrls}
+            loadBatch={loadBatchFromHistory}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
+            onFocusViewChange={setFocusViewActive}
+            />
+         </div>
       );
     }
+
+    const urlsForGrid = viewMode === 'favorites' ? favorites : currentUrls;
+
     return (
       <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
-        <UrlProcessor
-          showForm={!showProcessor}
-          onProcessStart={handleShowProcessor}
-          setHistory={setHistory}
-          history={history}
-          initialUrls={currentUrls}
-          loadBatch={loadBatchFromHistory}
-          favorites={favorites}
-          onToggleFavorite={handleToggleFavorite}
-          onFocusViewChange={setFocusViewActive}
-        />
+          {viewMode === 'favorites' && <h2 className="text-3xl font-bold text-center mb-8">My Collection</h2>}
+          <VideoGrid
+              urls={urlsForGrid}
+              favorites={favorites}
+              onToggleFavorite={handleToggleFavorite}
+              onFocusViewChange={setFocusViewActive}
+              onSelectVideo={handleSelectVideoForFocus}
+              selectedUrl={selectedUrlForFocus}
+              onBackToGrid={handleBackToGrid}
+            />
       </div>
     );
   }
@@ -130,7 +155,17 @@ export default function Home() {
         )}
 
         <main className="flex-grow overflow-y-auto">
-          {renderContent()}
+          {showProcessor ? renderContent() : <UrlProcessor
+            showForm={!showProcessor}
+            onProcessStart={handleShowProcessor}
+            setHistory={setHistory}
+            history={history}
+            initialUrls={currentUrls}
+            loadBatch={loadBatchFromHistory}
+            favorites={favorites}
+            onToggleFavorite={handleToggleFavorite}
+            onFocusViewChange={setFocusViewActive}
+          />}
         </main>
       </div>
   );

@@ -9,7 +9,6 @@ import { Separator } from './ui/separator';
 
 type VideoGridProps = {
   urls: string[];
-  view?: 'grid' | 'focus';
   selectedUrl?: string | null;
   onSelectVideo?: (url: string) => void;
   gridCols?: number;
@@ -24,7 +23,6 @@ type VideoGridProps = {
 
 export function VideoGrid({
   urls,
-  view = 'grid',
   selectedUrl,
   onSelectVideo = () => {},
   gridCols = 4,
@@ -36,26 +34,24 @@ export function VideoGrid({
   onFocusViewChange,
   controls,
 }: VideoGridProps) {
-  const [currentView, setCurrentView] = useState(view);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  const view = selectedUrl ? 'focus' : 'grid';
+
   useEffect(() => {
-    setCurrentView(view);
     onFocusViewChange?.(view === 'focus');
   }, [view, onFocusViewChange]);
 
   const handleSelectVideo = (url: string) => {
     onSelectVideo(url);
-    setCurrentView('focus');
   };
 
   const handleBackToGrid = () => {
     onBackToGrid();
-    setCurrentView('grid');
   }
 
   const orderedUrls = useMemo(() => {
-    if (!selectedUrl || currentView === 'grid') return urls;
+    if (!selectedUrl || view === 'grid') return urls;
     const newUrls = [...urls];
     const index = newUrls.indexOf(selectedUrl);
     if (index > -1) {
@@ -63,14 +59,17 @@ export function VideoGrid({
       newUrls.unshift(item);
     }
     return newUrls;
-  }, [selectedUrl, urls, currentView]);
+  }, [selectedUrl, urls, view]);
 
   useEffect(() => {
-    if (currentView === 'focus' && selectedUrl) {
-      const element = document.getElementById(`video-wrapper-${selectedUrl}`);
-      element?.scrollIntoView({behavior: 'smooth', block: 'start'});
+    if (view === 'focus' && selectedUrl) {
+      // Give the DOM a moment to update before scrolling
+      setTimeout(() => {
+        const element = document.getElementById(`video-wrapper-${selectedUrl}`);
+        element?.scrollIntoView({behavior: 'auto', block: 'start'});
+      }, 0);
     }
-  }, [currentView, selectedUrl]);
+  }, [view, selectedUrl]);
 
   const currentBatchTimestamp =
     history.find(batch => JSON.stringify(batch.urls) === JSON.stringify(urls))
@@ -88,7 +87,7 @@ export function VideoGrid({
     }
   };
   
-  if (currentView === 'focus') {
+  if (view === 'focus') {
     return (
       <div className="fixed inset-0 bg-black z-50">
         <div className="fixed top-4 left-4 z-[60] flex flex-col gap-4">
@@ -161,7 +160,7 @@ export function VideoGrid({
           </div>
         ))}
       </div>
-      {otherHistory.length > 0 && currentView === 'grid' && (
+      {otherHistory.length > 0 && view === 'grid' && (
         <div className="mt-16 text-center">
             <Separator className="my-8" />
             <h3 className="text-xl font-semibold mb-2">

@@ -46,7 +46,6 @@ export function UrlProcessor({
 }: UrlProcessorProps) {
   const [urls, setUrls] = useState<string[]>(initialUrls || []);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<'grid' | 'focus'>('grid');
   const [selectedUrl, setSelectedUrl] = useState<string | null>(null);
   const [gridSize, setGridSize] = useState(3);
   const [isPending, startTransition] = useTransition();
@@ -61,7 +60,8 @@ export function UrlProcessor({
   const {toast} = useToast();
 
   const hasUrls = urls.length > 0;
-  
+  const view = selectedUrl ? 'focus' : 'grid';
+
   useEffect(() => {
     onFocusViewChange(view === 'focus');
   }, [view, onFocusViewChange]);
@@ -95,7 +95,6 @@ export function UrlProcessor({
     if (showForm) {
       setUrls([]);
       setError(null);
-      setView('grid');
       setSelectedUrl(null);
     }
   }, [showForm]);
@@ -196,11 +195,9 @@ export function UrlProcessor({
 
   const handleSelectVideo = (url: string) => {
     setSelectedUrl(url);
-    setView('focus');
   };
 
   const handleBackToGrid = () => {
-    setView('grid');
     setSelectedUrl(null);
   };
   
@@ -378,7 +375,6 @@ export function UrlProcessor({
                   </div>
                   <VideoGrid
                     urls={urls ?? []}
-                    view={view}
                     selectedUrl={selectedUrl}
                     onSelectVideo={handleSelectVideo}
                     gridCols={gridSize}
@@ -392,7 +388,6 @@ export function UrlProcessor({
             ) : (
                 <VideoGrid
                   urls={urls ?? []}
-                  view={view}
                   selectedUrl={selectedUrl}
                   onSelectVideo={handleSelectVideo}
                   gridCols={gridSize}
