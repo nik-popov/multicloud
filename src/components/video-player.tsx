@@ -39,7 +39,7 @@ export function VideoPlayer({
       ([entry]) => {
         setIsVisible(entry.isIntersecting);
       },
-      { threshold: 0.1 } // Adjust threshold as needed
+      { threshold: 0.5 } // Play when 50% of the video is visible
     );
 
     if (containerRef.current) {
@@ -49,6 +49,7 @@ export function VideoPlayer({
 
     return () => {
       if (containerRef.current && observerRef.current) {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         observerRef.current.unobserve(containerRef.current);
       }
     };
@@ -57,17 +58,17 @@ export function VideoPlayer({
   useEffect(() => {
     if (videoRef.current) {
       if (isVisible) {
-        if(isFocusView) {
-          if (isPlaying) videoRef.current.play().catch(()=>{});
-          else videoRef.current.pause();
-        } else {
-           videoRef.current.play().catch(()=>{});
-        }
+         if (isFocusView) {
+            if(isPlaying) videoRef.current.play().catch(() => {});
+            else videoRef.current.pause();
+         } else {
+           videoRef.current.play().catch(() => {});
+         }
       } else {
         videoRef.current.pause();
       }
     }
-  }, [isVisible, isPlaying, isFocusView]);
+  }, [isVisible, isPlaying, isFocusView, src]);
 
 
   useEffect(() => {
@@ -95,12 +96,22 @@ export function VideoPlayer({
   };
 
   const handleLoadedMetadata = () => {
-    if (videoRef.current && isFocusView) {
+    if (videoRef.current) {
       const { videoWidth, videoHeight } = videoRef.current;
-      if (videoWidth > videoHeight) {
-        setAspectRatio('16/9');
+      if (isFocusView) {
+          if (videoWidth > videoHeight) {
+            setAspectRatio('16/9');
+          } else {
+            setAspectRatio('9/16');
+          }
+      }
+      // Start playing for all non-focus views
+      if (!isFocusView) {
+        videoRef.current.play().catch(() => {});
+        setIsPlaying(true);
       } else {
-        setAspectRatio('9/16');
+        // For focus view, respect the current isPlaying state
+        if(isPlaying) videoRef.current.play().catch(() => {});
       }
     }
   };
@@ -181,11 +192,12 @@ export function VideoPlayer({
               'w-full h-full',
               isFocusView ? 'object-contain' : 'object-cover'
             )}
-            autoPlay={isFocusView ? isPlaying : true}
             loop
             muted
             playsInline
             onLoadedMetadata={handleLoadedMetadata}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
           />}
           {!isPlaying && isFocusView && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -205,7 +217,7 @@ export function VideoPlayer({
             </div>
           )}
           {isFocusView && (
-            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-center text-white/70 text-xs font-semibold animate-pulse group-hover:opacity-0 transition-opacity">
+            <div className="absolute bottom-4 left-4 right-4 items-center justify-center text-white/70 text-xs font-semibold animate-pulse group-hover:opacity-0 transition-opacity hidden md:flex">
               <MousePointer className="h-4 w-4 mr-2" />
               <span>Move mouse to scrub video</span>
             </div>
@@ -225,8 +237,8 @@ export function VideoPlayer({
 
   return (
     <div className="flex items-center justify-center h-full w-full" ref={containerRef}>
-        <div className="w-[200px] flex-col items-center gap-4 hidden md:flex">
-            <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
+        <div className="absolute left-4 top-20 md:relative md:top-auto md:left-auto w-[200px] flex-col items-center gap-4 hidden md:flex">
+             <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-2 text-sm">
                     <Label
                     htmlFor="speed-control"
@@ -254,8 +266,8 @@ export function VideoPlayer({
             {videoElement}
         </div>
       
-        <div className="w-[200px] flex-col items-center gap-4 hidden md:flex">
-          <div className="text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm w-full">
+        <div className="absolute right-4 bottom-4 md:relative md:bottom-auto md:right-auto w-auto md:w-[200px] flex flex-col items-center gap-4">
+          <div className="text-white space-y-2 p-4 bg-black/50 md:bg-black/20 rounded-lg backdrop-blur-sm w-full hidden md:block">
             <p className="font-bold">@creatorname</p>
             <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
           </div>
@@ -263,14 +275,14 @@ export function VideoPlayer({
             variant="ghost"
             size="icon"
             onClick={onToggleLike}
-            className="text-white hover:text-red-500 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+            className="text-white hover:text-red-500 bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
           >
             <Heart className={cn("h-6 w-6", isLiked && "fill-red-500")} />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:text-primary hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+            className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
           >
             <Library className="h-6 w-6" />
           </Button>
@@ -278,7 +290,7 @@ export function VideoPlayer({
             variant="ghost"
             size="icon"
             onClick={handleFullscreen}
-            className="text-white hover:text-primary hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+            className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
           >
             <Fullscreen className="h-6 w-6" />
           </Button>

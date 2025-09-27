@@ -3,8 +3,16 @@
 import { UrlProcessor } from '@/components/url-processor';
 import { Button } from '@/components/ui/button';
 import { VideoGrid } from '@/components/video-grid';
-import { Heart } from 'lucide-react';
+import { Heart, MoreVertical } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 export default function Home() {
   const [showProcessor, setShowProcessor] = useState(false);
@@ -14,6 +22,7 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<'main' | 'favorites'>('main');
   const [focusViewActive, setFocusViewActive] = useState(false);
   const [selectedUrlForFocus, setSelectedUrlForFocus] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const storedFavorites = localStorage.getItem('bulkshorts_favorites');
@@ -113,6 +122,7 @@ export default function Home() {
               onSelectVideo={handleSelectVideoForFocus}
               selectedUrl={selectedUrlForFocus}
               onBackToGrid={handleBackToGrid}
+              viewMode={viewMode}
             />
       </div>
     );
@@ -134,22 +144,40 @@ export default function Home() {
                   Collection ({favorites.length})
               </Button>
             </div>
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground hidden sm:block">
-                Sources:
-              </p>
-              <Button variant="outline" disabled>
-                Reddit
-              </Button>
-              <Button variant="outline" disabled>
-                X
-              </Button>
-              <Button variant="outline" disabled>
-                IG
-              </Button>
-              <Button variant="outline" disabled>
-                YouTube
-              </Button>
+             <div className="flex items-center gap-2">
+              {isMobile ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem disabled>Reddit</DropdownMenuItem>
+                    <DropdownMenuItem disabled>X</DropdownMenuItem>
+                    <DropdownMenuItem disabled>IG</DropdownMenuItem>
+                    <DropdownMenuItem disabled>YouTube</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground hidden sm:block">
+                    Sources:
+                  </p>
+                  <Button variant="outline" disabled>
+                    Reddit
+                  </Button>
+                  <Button variant="outline" disabled>
+                    X
+                  </Button>
+                  <Button variant="outline" disabled>
+                    IG
+                  </Button>
+                  <Button variant="outline" disabled>
+                    YouTube
+                  </Button>
+                </>
+              )}
             </div>
           </header>
         )}

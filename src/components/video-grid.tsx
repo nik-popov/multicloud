@@ -18,6 +18,7 @@ type VideoGridProps = {
   onToggleFavorite: (url: string) => void;
   onFocusViewChange?: (isFocusView: boolean) => void;
   controls?: React.ReactNode;
+  viewMode?: 'main' | 'favorites';
 };
 
 export function VideoGrid({
@@ -32,6 +33,7 @@ export function VideoGrid({
   onToggleFavorite,
   onFocusViewChange,
   controls,
+  viewMode,
 }: VideoGridProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -51,24 +53,25 @@ export function VideoGrid({
 
   const orderedUrls = useMemo(() => {
     if (!selectedUrl || view === 'grid') return urls;
-    const newUrls = [...urls];
+    const currentUrls = viewMode === 'favorites' ? favorites : urls;
+    const newUrls = [...currentUrls];
     const index = newUrls.indexOf(selectedUrl);
     if (index > -1) {
       const [item] = newUrls.splice(index, 1);
       newUrls.unshift(item);
     }
     return newUrls;
-  }, [selectedUrl, urls, view]);
+  }, [selectedUrl, urls, view, viewMode, favorites]);
+
 
   useEffect(() => {
     if (view === 'focus' && selectedUrl) {
-      // Give the DOM a moment to update before scrolling
-      setTimeout(() => {
-        const element = document.getElementById(`video-wrapper-${selectedUrl}`);
-        element?.scrollIntoView({behavior: 'auto', block: 'start'});
-      }, 0);
+      const targetElement = document.getElementById(`video-wrapper-${CSS.escape(selectedUrl)}`);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
     }
-  }, [view, selectedUrl]);
+  }, [view, selectedUrl, orderedUrls]);
 
   const currentBatchTimestamp =
     history.find(batch => JSON.stringify(batch.urls) === JSON.stringify(urls))
@@ -103,19 +106,20 @@ export function VideoGrid({
             variant="secondary"
             onClick={handleBackToGrid}
             aria-label="Back to grid"
+            className="bg-card/50 backdrop-blur-sm"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Grid
           </Button>
-          <div className="w-[200px]">{controls}</div>
+          <div className="w-[200px] hidden md:block">{controls}</div>
         </div>
-         {urls.length > 1 && (
+         {orderedUrls.length > 1 && (
           <div
             onClick={handleScrollUp}
             className="fixed top-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white z-[60] cursor-pointer"
           >
             <ChevronUp className="animate-bounce h-6 w-6" />
-            <span className="text-sm uppercase tracking-widest">Scroll</span>
+            <span className="text-sm uppercase tracking-widest hidden md:inline">Scroll</span>
           </div>
         )}
         <div
@@ -126,7 +130,7 @@ export function VideoGrid({
           {orderedUrls.map(url => (
             <div
               key={url}
-              id={`video-wrapper-${url}`}
+              id={`video-wrapper-${CSS.escape(url)}`}
               className="snap-start h-full w-full flex items-center justify-center"
             >
               <VideoPlayer
@@ -138,12 +142,12 @@ export function VideoGrid({
             </div>
           ))}
         </div>
-        {urls.length > 1 && (
+        {orderedUrls.length > 1 && (
           <div
             onClick={handleScrollDown}
             className="fixed bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center text-white z-[60] cursor-pointer"
           >
-            <span className="text-sm uppercase tracking-widest">Scroll</span>
+            <span className="text-sm uppercase tracking-widest hidden md:inline">Scroll</span>
             <ChevronDown className="animate-bounce h-6 w-6" />
           </div>
         )}
@@ -156,11 +160,10 @@ export function VideoGrid({
       <h2 className="text-2xl font-bold text-center mb-8">Video Discoveries</h2>
       <div
         ref={scrollContainerRef}
-        className="grid gap-6"
-        style={{gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`}}
+        className={cn("grid gap-4 md:gap-6", `grid-cols-2 md:grid-cols-${gridCols}`)}
       >
         {urls.map(url => (
-          <div key={url} id={`video-wrapper-${url}`} className="w-full">
+          <div key={url} id={`video-wrapper-${CSS.escape(url)}`} className="w-full">
             <VideoPlayer
               src={url}
               onClick={() => handleSelectVideo(url)}
