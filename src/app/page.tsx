@@ -72,18 +72,19 @@ function HomePageContent() {
         router.replace('/', undefined);
       }
     }
-    // Always set loading to false after handling params or if no params exist
-    setIsLoading(false);
   }, [user, router]);
 
   useEffect(() => {
     const urlsParam = searchParams.get('urls');
-    handleUrlParam(urlsParam);
+    if (urlsParam) {
+      handleUrlParam(urlsParam);
+    }
   }, [searchParams, handleUrlParam]);
 
 
   useEffect(() => {
-    async function loadUserData() {
+    async function loadInitialData() {
+      setIsLoading(true);
       if (user) {
         await migrateFavorites(user.uid);
         await migrateHistory(user.uid);
@@ -99,11 +100,11 @@ function HomePageContent() {
         const localHistory = localStorage.getItem('bulkshorts_history');
         setHistory(localHistory ? JSON.parse(localHistory) : []);
       }
-       // Don't set isLoading here, handleUrlParam does it.
+      setIsLoading(false);
     }
     
     if (!authLoading) {
-        loadUserData();
+      loadInitialData();
     }
   }, [user, authLoading]);
 
@@ -159,7 +160,7 @@ function HomePageContent() {
   };
 
   const renderContent = () => {
-    if (isLoading && currentUrls.length === 0) {
+    if (isLoading) {
        return (
         <div className="flex flex-col items-center justify-center h-full pt-20">
           <div className="text-center w-full max-w-md mx-auto space-y-4">
