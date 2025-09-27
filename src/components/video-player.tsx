@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -32,7 +33,6 @@ export function VideoPlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(!isFocusView);
   const [isVisible, setIsVisible] = useState(false);
-  const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -42,15 +42,14 @@ export function VideoPlayer({
       { threshold: 0.5 } // Play when 50% of the video is visible
     );
 
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
+    const currentRef = containerRef.current;
+    if (currentRef) {
+      observer.observe(currentRef);
     }
-    observerRef.current = observer;
 
     return () => {
-      if (containerRef.current && observerRef.current) {
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        observerRef.current.unobserve(containerRef.current);
+      if (currentRef) {
+        observer.unobserve(currentRef);
       }
     };
   }, []);
@@ -68,7 +67,7 @@ export function VideoPlayer({
         videoRef.current.pause();
       }
     }
-  }, [isVisible, isPlaying, isFocusView, src]);
+  }, [isVisible, isPlaying, isFocusView]);
 
 
   useEffect(() => {
@@ -105,13 +104,13 @@ export function VideoPlayer({
             setAspectRatio('9/16');
           }
       }
-      // Start playing for all non-focus views
-      if (!isFocusView) {
+      // Start playing for all non-focus views if visible
+      if (!isFocusView && isVisible) {
         videoRef.current.play().catch(() => {});
         setIsPlaying(true);
-      } else {
+      } else if (isFocusView) {
         // For focus view, respect the current isPlaying state
-        if(isPlaying) videoRef.current.play().catch(() => {});
+        if(isPlaying && isVisible) videoRef.current.play().catch(() => {});
       }
     }
   };
@@ -154,14 +153,14 @@ export function VideoPlayer({
   if (isHistoryCard) {
     return (
        <div className="w-full h-full" ref={containerRef}>
-         {isVisible && <video
+         <video
             src={src}
             className='w-full h-full object-cover'
-            autoPlay
+            autoPlay={isVisible}
             loop
             muted
             playsInline
-         />}
+         />
        </div>
     );
   }
@@ -185,7 +184,7 @@ export function VideoPlayer({
           )}
           onMouseMove={isFocusView ? handleMouseMove : undefined}
         >
-          {isVisible && <video
+          <video
             ref={videoRef}
             src={src}
             className={cn(
@@ -198,7 +197,8 @@ export function VideoPlayer({
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
-          />}
+            autoPlay={!isFocusView}
+          />
           {!isPlaying && isFocusView && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="bg-black/50 rounded-full p-4">
@@ -227,74 +227,70 @@ export function VideoPlayer({
     </Card>
   );
 
-  if (!isFocusView) {
-    return (
-      <div className="w-full h-full relative group flex items-center justify-center" ref={containerRef}>
-        {videoElement}
-      </div>
-    );
-  }
-
   return (
-    <div className="flex items-center justify-center h-full w-full" ref={containerRef}>
-        <div className="absolute left-4 top-20 md:relative md:top-auto md:left-auto w-[200px] flex-col items-center gap-4 hidden md:flex">
-             <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
-                <div className="flex flex-col items-center gap-2 text-sm">
-                    <Label
-                    htmlFor="speed-control"
-                    className="text-white/80 flex-shrink-0"
-                    >
-                    Speed
-                    </Label>
-                    <Slider
-                    id="speed-control"
-                    min={0.5}
-                    max={2}
-                    step={0.1}
-                    value={[playbackRate]}
-                    onValueChange={handlePlaybackRateChange}
-                    className="w-full"
-                    />
-                    <span className="font-mono text-xs">
-                    {playbackRate.toFixed(1)}x
-                    </span>
-                </div>
-            </div>
-        </div>
-      
-        <div className="w-full md:w-auto h-full flex items-center justify-center">
-            {videoElement}
-        </div>
-      
-        <div className="absolute right-4 bottom-4 md:relative md:bottom-auto md:right-auto w-auto md:w-[200px] flex flex-col items-center gap-4">
-          <div className="text-white space-y-2 p-4 bg-black/50 md:bg-black/20 rounded-lg backdrop-blur-sm w-full hidden md:block">
-            <p className="font-bold">@creatorname</p>
-            <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
+    <div className="w-full h-full relative group flex items-center justify-center" ref={containerRef}>
+      {isFocusView ? (
+        <div className="flex items-center justify-center h-full w-full">
+          <div className="absolute left-4 top-20 md:relative md:top-auto md:left-auto w-[200px] flex-col items-center gap-4 hidden md:flex">
+               <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
+                  <div className="flex flex-col items-center gap-2 text-sm">
+                      <Label
+                      htmlFor="speed-control"
+                      className="text-white/80 flex-shrink-0"
+                      >
+                      Speed
+                      </Label>
+                      <Slider
+                      id="speed-control"
+                      min={0.5}
+                      max={2}
+                      step={0.1}
+                      value={[playbackRate]}
+                      onValueChange={handlePlaybackRateChange}
+                      className="w-full"
+                      />
+                      <span className="font-mono text-xs">
+                      {playbackRate.toFixed(1)}x
+                      </span>
+                  </div>
+              </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onToggleLike}
-            className="text-white hover:text-red-500 bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
-          >
-            <Heart className={cn("h-6 w-6", isLiked && "fill-red-500")} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
-          >
-            <Library className="h-6 w-6" />
-          </Button>
+        
+          <div className="w-full md:w-auto h-full flex items-center justify-center">
+              {videoElement}
+          </div>
+        
+          <div className="absolute right-4 bottom-4 md:relative md:bottom-auto md:right-auto w-auto md:w-[200px] flex flex-col items-center gap-4">
+            <div className="text-white space-y-2 p-4 bg-black/50 md:bg-black/20 rounded-lg backdrop-blur-sm w-full hidden md:block">
+              <p className="font-bold">@creatorname</p>
+              <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
+            </div>
             <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleFullscreen}
-            className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
-          >
-            <Fullscreen className="h-6 w-6" />
-          </Button>
+              variant="ghost"
+              size="icon"
+              onClick={onToggleLike}
+              className="text-white hover:text-red-500 bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+            >
+              <Heart className={cn("h-6 w-6", isLiked && "fill-red-500")} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+            >
+              <Library className="h-6 w-6" />
+            </Button>
+              <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleFullscreen}
+              className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+            >
+              <Fullscreen className="h-6 w-6" />
+            </Button>
+          </div>
         </div>
+      ) : videoElement}
     </div>
   );
 }
