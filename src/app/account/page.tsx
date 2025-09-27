@@ -10,7 +10,6 @@ import { useEffect, useState, Suspense } from 'react';
 import { getFavorites, getHistory } from '@/lib/firestore';
 import { Heart, Loader2 } from 'lucide-react';
 import { VideoCard } from '@/components/video-card';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 type HistoryItem = {
   timestamp: string;
@@ -26,24 +25,32 @@ function AccountPageContent() {
 
   useEffect(() => {
     if (authLoading) {
-      return;
+      return; // Wait until authentication status is resolved
     }
     if (!user) {
       router.push('/login');
-      return;
+      return; // Redirect if not logged in
     }
 
+    // Only fetch data if we have a user
     async function fetchData() {
       setLoadingData(true);
-      const [favs, userHistory] = await Promise.all([
-        getFavorites(user.uid),
-        getHistory(user.uid),
-      ]);
-      setFavorites(favs);
-      setHistory(userHistory);
-      setLoadingData(false);
+      try {
+        const [favs, userHistory] = await Promise.all([
+          getFavorites(user.uid),
+          getHistory(user.uid),
+        ]);
+        setFavorites(favs);
+        setHistory(userHistory);
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+      } finally {
+        setLoadingData(false);
+      }
     }
+    
     fetchData();
+
   }, [user, authLoading, router]);
 
   const loadBatchFromHistory = (urls: string[]) => {
