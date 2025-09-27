@@ -208,66 +208,61 @@ export function UrlProcessor({
   };
   
   const Controls = () => (
-     <div className="flex flex-col gap-4">
-        <Card className="p-4 bg-card/80 backdrop-blur-sm">
-          <CardContent className="p-0 flex flex-col items-center gap-4">
-            <div className="flex items-center justify-between w-full">
-              <Label
-                htmlFor="auto-scroll"
-                className="text-sm font-medium"
-              >
-                Auto-Scroll
-              </Label>
-              <Switch
-                id="auto-scroll"
-                checked={isAutoScrolling}
-                onCheckedChange={setIsAutoScrolling}
-                aria-label="Toggle auto-scroll"
-              />
-            </div>
-          </CardContent>
-        </Card>
+     <div className="flex flex-col gap-4 text-white">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between w-full">
+            <Label
+              htmlFor="auto-scroll"
+              className="text-sm font-medium"
+            >
+              Auto-Scroll
+            </Label>
+            <Switch
+              id="auto-scroll"
+              checked={isAutoScrolling}
+              onCheckedChange={setIsAutoScrolling}
+              aria-label="Toggle auto-scroll"
+            />
+          </div>
+        </div>
+
         {view === 'grid' && (
-          <Card className="p-4 bg-card/80 backdrop-blur-sm">
-            <CardContent className="p-0 space-y-2">
-              <div className="flex justify-between items-center gap-4">
-                <Label htmlFor="grid-size" className="flex-shrink-0">
-                  Grid Size
-                </Label>
-                <span className="text-sm font-medium">{gridSize}</span>
-              </div>
-              <Slider
-                id="grid-size"
-                min={1}
-                max={8}
-                step={1}
-                value={[gridSize]}
-                onValueChange={value => setGridSize(value[0])}
-              />
-            </CardContent>
-          </Card>
-        )}
-        <Card className="p-4 bg-card/80 backdrop-blur-sm">
-          <CardContent className="p-0 space-y-2">
+          <div className="p-0 space-y-2">
             <div className="flex justify-between items-center gap-4">
-              <Label
-                htmlFor="scroll-speed"
-                className="flex-shrink-0"
-              >
-                Scroll Speed
+              <Label htmlFor="grid-size" className="flex-shrink-0">
+                Grid Size
               </Label>
-              <span className="text-sm font-medium">{scrollSpeed}</span>
+              <span className="text-sm font-medium">{gridSize}</span>
             </div>
             <Slider
-              id="scroll-speed"
+              id="grid-size"
               min={1}
-              max={10}
+              max={8}
               step={1}
-              value={[scrollSpeed]}
-              onValueChange={value => setScrollSpeed(value[0])}
+              value={[gridSize]}
+              onValueChange={value => setGridSize(value[0])}
             />
-          </CardContent>
-        </Card>
+          </div>
+        )}
+        <div className="p-0 space-y-2">
+          <div className="flex justify-between items-center gap-4">
+            <Label
+              htmlFor="scroll-speed"
+              className="flex-shrink-0"
+            >
+              Scroll Speed
+            </Label>
+            <span className="text-sm font-medium">{scrollSpeed}</span>
+          </div>
+          <Slider
+            id="scroll-speed"
+            min={1}
+            max={10}
+            step={1}
+            value={[scrollSpeed]}
+            onValueChange={value => setScrollSpeed(value[0])}
+          />
+        </div>
       </div>
   );
 
@@ -376,7 +371,11 @@ export function UrlProcessor({
             {view === 'grid' ? (
                <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
                   <div className="sticky top-4 h-min">
-                    <Controls />
+                    <Card className="p-4 bg-card/80 backdrop-blur-sm">
+                      <CardContent className="p-0">
+                        <Controls />
+                      </CardContent>
+                    </Card>
                   </div>
                   <VideoGrid
                     urls={urls ?? []}

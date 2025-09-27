@@ -160,28 +160,7 @@ export function VideoPlayer({
     <div className="w-full h-full relative group flex items-center justify-center">
         <div className="flex items-center justify-center h-full w-full">
           <div className="absolute left-4 top-20 md:relative md:top-auto md:left-auto w-[200px] flex-col items-center gap-4 hidden md:flex">
-                <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
-                    <div className="flex flex-col items-center gap-2 text-sm">
-                        <Label
-                        htmlFor="speed-control"
-                        className="text-white/80 flex-shrink-0"
-                        >
-                        Speed
-                        </Label>
-                        <Slider
-                        id="speed-control"
-                        min={0.5}
-                        max={2}
-                        step={0.1}
-                        value={[playbackRate]}
-                        onValueChange={handlePlaybackRateChange}
-                        className="w-full"
-                        />
-                        <span className="font-mono text-xs">
-                        {playbackRate.toFixed(1)}x
-                        </span>
-                    </div>
-                </div>
+                {/* This space is intentionally left blank */}
           </div>
         
           <div className="w-full md:w-auto h-full flex items-center justify-center">
@@ -235,8 +214,30 @@ export function VideoPlayer({
                   </Button>
               </PopoverTrigger>
               <PopoverContent side="left" className="w-auto bg-card/80 backdrop-blur-md border-white/20 text-white">
-                <div className="w-56">
+                <div className="w-56 space-y-4">
                   {controls}
+                  <div className="w-full text-white space-y-2">
+                      <div className="flex flex-col items-center gap-2 text-sm">
+                          <Label
+                          htmlFor="speed-control"
+                          className="text-white/80 flex-shrink-0"
+                          >
+                          Video Speed
+                          </Label>
+                          <Slider
+                          id="speed-control"
+                          min={0.5}
+                          max={2}
+                          step={0.1}
+                          value={[playbackRate]}
+                          onValueChange={handlePlaybackRateChange}
+                          className="w-full"
+                          />
+                          <span className="font-mono text-xs">
+                          {playbackRate.toFixed(1)}x
+                          </span>
+                      </div>
+                  </div>
                 </div>
               </PopoverContent>
             </Popover>
