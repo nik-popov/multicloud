@@ -80,9 +80,6 @@ export default function AccountPage() {
           </Link>
         </div>
          <div className="flex items-center gap-2">
-            <Button variant="secondary" asChild>
-                <Link href="/discover">New Batch</Link>
-            </Button>
             <Button onClick={signOut}>
               Log Out
             </Button>
