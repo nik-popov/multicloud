@@ -27,10 +27,11 @@ export function VideoGrid({ urls, view, onSelectVideo, gridCols = 4 }: VideoGrid
             >
             {urls.map((url, index) => (
                 <div 
-                    key={index} 
+                    key={url} 
+                    id={`video-wrapper-${url}`}
                     className={cn(
-                        "transition-opacity duration-500",
-                        !isGridView && "w-full max-w-2xl mx-auto snap-start h-screen flex items-center justify-center",
+                        "transition-opacity duration-500 w-full",
+                        !isGridView && "max-w-4xl mx-auto snap-start h-screen flex items-center justify-center",
                         isGridView ? "opacity-100" : ""
                     )}
                 >
