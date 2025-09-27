@@ -3,7 +3,6 @@
 import { UrlProcessor } from '@/components/url-processor';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { SidebarProvider, Sidebar, SidebarTrigger, SidebarContent, SidebarHeader, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 
 export default function Home() {
   const [showProcessor, setShowProcessor] = useState(false);
@@ -28,7 +27,6 @@ export default function Home() {
   }
 
   return (
-    <SidebarProvider>
       <div className="flex flex-col h-screen">
         <header className="flex items-center justify-between p-4 border-b shrink-0">
           <div className="flex items-center gap-4">
@@ -40,7 +38,6 @@ export default function Home() {
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <SidebarTrigger />
             <p className="text-sm text-muted-foreground hidden sm:block">
               Sources:
             </p>
@@ -72,31 +69,5 @@ export default function Home() {
           </div>
         </main>
       </div>
-       <Sidebar side="right">
-        <SidebarContent>
-          <SidebarHeader>
-            <h2 className="text-xl font-semibold">History</h2>
-          </SidebarHeader>
-          <SidebarMenu>
-            {history.length > 0 ? (
-              history.map((batch, index) => (
-                <SidebarMenuItem key={index}>
-                  <SidebarMenuButton onClick={() => loadBatchFromHistory(batch.urls)}>
-                    <div className='flex flex-col items-start'>
-                      <span className='font-semibold'>{new Date(batch.timestamp).toLocaleString()}</span>
-                      <span className='text-xs text-muted-foreground'>{batch.urls.length} videos</span>
-                    </div>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))
-            ) : (
-              <div className='p-4 text-sm text-muted-foreground'>
-                No history yet. Process a batch of URLs to see it here.
-              </div>
-            )}
-          </SidebarMenu>
-        </SidebarContent>
-      </Sidebar>
-    </SidebarProvider>
   );
 }

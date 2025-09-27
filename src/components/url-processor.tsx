@@ -183,69 +183,91 @@ export function UrlProcessor({ showForm, onProcessStart, setHistory, history, in
   return (
     <div className="space-y-8">
       {showForm && !isPending && (
-        <Card className="w-full shadow-lg max-w-3xl mx-auto bg-card/80 backdrop-blur-sm mt-12">
-          <form onSubmit={handleSubmit} ref={formRef}>
-            <CardHeader>
-              <CardTitle className="text-center text-3xl">
-                Bulk Video Discovery
-              </CardTitle>
-              <CardDescription className="text-center">
-                Paste a list of video URLs or upload files to instantly create a browsable grid of short-form content.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                ref={textareaRef}
-                name="urls"
-                placeholder={`https://example.com/video1.mp4\nhttps://anothersite.org/media.mp4\n...and so on`}
-                className="min-h-[150px] resize-y font-mono text-sm"
-              />
-               <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="hidden"
-                accept="video/*"
-                multiple
-              />
-            </CardContent>
-            <CardFooter className="flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-               <div className="flex gap-2 w-full sm:w-auto">
-                <Button
-                  type="submit"
-                  disabled={isPending}
-                  className="flex-grow sm:flex-grow-0"
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Validating...
-                    </>
-                  ) : (
-                    'Discover Videos'
-                  )}
-                </Button>
-                 <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleUploadClick}
-                  disabled={isPending}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Files
-                </Button>
-              </div>
-              {error && (
-                <Alert
-                  variant="destructive"
-                  className="w-full flex-grow sm:w-auto"
-                >
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-            </CardFooter>
-          </form>
-        </Card>
+        <>
+          <Card className="w-full shadow-lg max-w-3xl mx-auto bg-card/80 backdrop-blur-sm mt-12">
+            <form onSubmit={handleSubmit} ref={formRef}>
+              <CardHeader>
+                <CardTitle className="text-center text-3xl">
+                  Bulk Video Discovery
+                </CardTitle>
+                <CardDescription className="text-center">
+                  Paste a list of video URLs or upload files to instantly create a browsable grid of short-form content.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  ref={textareaRef}
+                  name="urls"
+                  placeholder={`https://example.com/video1.mp4\nhttps://anothersite.org/media.mp4\n...and so on`}
+                  className="min-h-[150px] resize-y font-mono text-sm"
+                />
+                 <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept="video/*"
+                  multiple
+                />
+              </CardContent>
+              <CardFooter className="flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+                 <div className="flex gap-2 w-full sm:w-auto">
+                  <Button
+                    type="submit"
+                    disabled={isPending}
+                    className="flex-grow sm:flex-grow-0"
+                  >
+                    {isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Validating...
+                      </>
+                    ) : (
+                      'Discover Videos'
+                    )}
+                  </Button>
+                   <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleUploadClick}
+                    disabled={isPending}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Files
+                  </Button>
+                </div>
+                {error && (
+                  <Alert
+                    variant="destructive"
+                    className="w-full flex-grow sm:w-auto"
+                  >
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+              </CardFooter>
+            </form>
+          </Card>
+          {history.length > 0 && (
+            <div className="space-y-4 max-w-3xl mx-auto">
+                <h2 className="text-2xl font-bold text-center">History</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {history.map((batch, index) => (
+                    <Card key={index} className="bg-card/80 backdrop-blur-sm hover:border-primary transition-colors">
+                      <CardHeader>
+                        <CardTitle className="text-lg">{new Date(batch.timestamp).toLocaleString()}</CardTitle>
+                        <CardDescription>{batch.urls.length} videos</CardDescription>
+                      </CardHeader>
+                      <CardFooter>
+                        <Button variant="secondary" onClick={() => loadBatch(batch.urls)}>
+                          Load Batch
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+            </div>
+          )}
+        </>
       )}
 
       {isPending && !hasUrls && (
