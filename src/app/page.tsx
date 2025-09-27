@@ -139,9 +139,11 @@ export default function Home() {
               </h1>
             </div>
              <div className="flex items-center gap-2">
-                <Button variant="secondary" onClick={handleNewBatch}>
-                  New Batch
-                </Button>
+                {!isMobile && (
+                  <Button variant="secondary" onClick={handleNewBatch}>
+                    New Batch
+                  </Button>
+                )}
                 <Button variant="outline" onClick={showFavorites} disabled={favorites.length === 0}>
                     <Heart className="mr-2" />
                     Collection ({favorites.length})
