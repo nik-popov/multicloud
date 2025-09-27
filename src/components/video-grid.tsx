@@ -242,7 +242,9 @@ export function VideoGrid({
                 src={url}
                 isLiked={favorites.includes(url)}
                 onToggleLike={() => onToggleFavorite(url)}
-                controls={<Controls />}
+                controls={
+                  <Controls />
+                }
               />
             </div>
           ))}

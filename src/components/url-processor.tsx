@@ -14,80 +14,38 @@ import {
 } from '@/components/ui/card';
 import {Textarea} from '@/components/ui/textarea';
 import {Loader2, Upload} from 'lucide-react';
-import {useEffect, useRef, useState, useTransition} from 'react';
+import {useRef, useState, useTransition} from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { VideoCard } from './video-card';
 import { Progress } from '@/components/ui/progress';
 
 type UrlProcessorProps = {
-  showForm: boolean;
   onProcessStart: () => void;
-  setHistory: (history: any[]) => void;
+  onProcessComplete: (urls: string[]) => void;
+  onProgress: (progress: number) => void;
   history: any[];
-  initialUrls?: string[];
   loadBatch: (urls: string[]) => void;
-  favorites: string[];
-  onToggleFavorite: (url: string) => void;
-  onFocusViewChange: (isFocusView: boolean) => void;
+  isProcessing: boolean;
+  processingProgress: number;
 };
 
 export function UrlProcessor({ 
-  showForm, 
-  onProcessStart, 
-  setHistory, 
-  history, 
-  initialUrls, 
-  loadBatch, 
-  favorites,
-  onToggleFavorite,
-  onFocusViewChange
+  onProcessStart,
+  onProcessComplete,
+  onProgress,
+  history,
+  loadBatch,
+  isProcessing,
+  processingProgress,
 }: UrlProcessorProps) {
-  const [urls, setUrls] = useState<string[]>(initialUrls || []);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [progress, setProgress] = useState(0);
 
   const formRef = useRef<HTMLFormElement>(null);
-  const resultRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const {toast} = useToast();
-
-  const hasUrls = urls.length > 0;
   
-  useEffect(() => {
-    if (initialUrls) {
-      setUrls(initialUrls);
-    }
-  }, [initialUrls]);
-
-  useEffect(() => {
-    const storedHistory = localStorage.getItem('bulkshorts_history');
-    if (storedHistory) {
-      setHistory(JSON.parse(storedHistory));
-    }
-  }, [setHistory]);
-
-  const saveToHistory = (newUrls: string[]) => {
-    if (newUrls.length === 0) return;
-    const newBatch = {
-      timestamp: new Date().toISOString(),
-      urls: newUrls
-    };
-    const storedHistory = localStorage.getItem('bulkshorts_history') || '[]';
-    const updatedHistory = [newBatch, ...JSON.parse(storedHistory)].slice(0, 50); // Limit history size
-    localStorage.setItem('bulkshorts_history', JSON.stringify(updatedHistory));
-    setHistory(updatedHistory);
-  }
-
-  useEffect(() => {
-    if (showForm) {
-      setUrls([]);
-      setError(null);
-    }
-  }, [showForm]);
-
-
   const processUrls = (urlsToValidate: string[]) => {
     if (!urlsToValidate || urlsToValidate.length === 0) {
       setError('Please enter at least one URL or select files.');
@@ -95,9 +53,7 @@ export function UrlProcessor({
     }
     
     onProcessStart();
-    setUrls([]);
     setError(null);
-    setProgress(0);
     
     startTransition(async () => {
       const totalUrls = urlsToValidate.length;
@@ -108,14 +64,13 @@ export function UrlProcessor({
         const result = await validateUrlAction(url);
         if (result.validUrl) {
           allUrls.push(result.validUrl);
-          setUrls(prev => [...prev, result.validUrl!]);
         }
         if (result.error) {
           setError(prev => (prev ? `${prev}\n${result.error}` : result.error));
         }
-        setProgress(((i + 1) / totalUrls) * 100);
+        onProgress(((i + 1) / totalUrls) * 100);
       }
-      saveToHistory(allUrls);
+      onProcessComplete(allUrls);
     });
   }
 
@@ -159,9 +114,21 @@ export function UrlProcessor({
     fileInputRef.current?.click();
   }
 
+  if (isProcessing) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full pt-20">
+        <div className="text-center w-full max-w-md mx-auto space-y-4">
+          <Loader2 className="mr-2 h-8 w-8 animate-spin inline-block" />
+          <p>Validating URLs...</p>
+          <Progress value={processingProgress} />
+          <p className="text-sm text-muted-foreground">{Math.round(processingProgress)}% complete</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
-      {showForm && !isPending && !hasUrls && (
         <>
           <Card className="w-full shadow-lg max-w-3xl mx-auto bg-card/80 backdrop-blur-sm mt-12">
             <form onSubmit={handleSubmit} ref={formRef}>
@@ -179,7 +146,6 @@ export function UrlProcessor({
                   name="urls"
                   placeholder={`https://example.com/video1.mp4\nhttps://anothersite.org/media.mp4\n...and so on`}
                   className="min-h-[150px] resize-y font-mono text-sm"
-                  defaultValue={initialUrls?.join('\n')}
                 />
                  <input
                   type="file"
@@ -248,18 +214,6 @@ export function UrlProcessor({
             </div>
           )}
         </>
-      )}
-
-      {isPending && !hasUrls && (
-        <div className="text-center w-full max-w-md mx-auto space-y-4">
-          <Loader2 className="mr-2 h-8 w-8 animate-spin inline-block" />
-          <p>Validating URLs...</p>
-          <Progress value={progress} />
-        </div>
-      )}
-
-      <div ref={resultRef} className="relative">
-      </div>
     </div>
   );
 }

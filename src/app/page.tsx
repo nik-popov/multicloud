@@ -4,36 +4,34 @@
 import { UrlProcessor } from '@/components/url-processor';
 import { Button } from '@/components/ui/button';
 import { VideoGrid } from '@/components/video-grid';
-import { Heart, MoreVertical } from 'lucide-react';
+import { Heart, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
 export default function Home() {
-  const [showProcessor, setShowProcessor] = useState(false);
+  const [currentUrls, setCurrentUrls] = useState<string[]>([]);
   const [history, setHistory] = useState<any[]>([]);
-  const [currentUrls, setCurrentUrls] = useState<string[] | undefined>(undefined);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'main' | 'favorites'>('main');
   const [focusViewActive, setFocusViewActive] = useState(false);
   const [selectedUrlForFocus, setSelectedUrlForFocus] = useState<string | null>(null);
   const isMobile = useIsMobile();
-
   const [gridSize, setGridSize] = useState(3);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(5);
-
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingProgress, setProcessingProgress] = useState(0);
 
   useEffect(() => {
     const storedFavorites = localStorage.getItem('bulkshorts_favorites');
     if (storedFavorites) {
       setFavorites(JSON.parse(storedFavorites));
+    }
+    const storedHistory = localStorage.getItem('bulkshorts_history');
+    if (storedHistory) {
+      setHistory(JSON.parse(storedHistory));
     }
   }, []);
 
@@ -43,46 +41,59 @@ export default function Home() {
         ? prev.filter(u => u !== url)
         : [...prev, url];
       localStorage.setItem('bulkshorts_favorites', JSON.stringify(newFavorites));
-      // if in favorites view and unfavoriting, update the view
       if (viewMode === 'favorites' && !newFavorites.includes(url)) {
         setCurrentUrls(newFavorites);
       }
       return newFavorites;
     });
   }
-
-  const handleShowProcessor = () => {
-    setShowProcessor(true);
+  
+  const handleProcessStart = () => {
+    setIsProcessing(true);
+    setProcessingProgress(0);
     setCurrentUrls([]);
     setViewMode('main');
     setSelectedUrlForFocus(null);
   };
+  
+  const handleProcessComplete = (processedUrls: string[]) => {
+    setCurrentUrls(processedUrls);
+    setIsProcessing(false);
+    
+    if (processedUrls.length > 0) {
+      const newBatch = {
+        timestamp: new Date().toISOString(),
+        urls: processedUrls
+      };
+      const updatedHistory = [newBatch, ...history].slice(0, 50); // Limit history size
+      setHistory(updatedHistory);
+      localStorage.setItem('bulkshorts_history', JSON.stringify(updatedHistory));
+    }
+  };
 
   const handleNewBatch = () => {
-    setShowProcessor(false);
-    setCurrentUrls(undefined);
+    setCurrentUrls([]);
     setViewMode('main');
     setFocusViewActive(false);
     setSelectedUrlForFocus(null);
+    setIsProcessing(false);
   };
   
   const loadBatchFromHistory = (urls: string[]) => {
     setCurrentUrls(urls);
-    if (!showProcessor) {
-      setShowProcessor(true);
-    }
     setViewMode('main');
     setFocusViewActive(false);
     setSelectedUrlForFocus(null);
+    setIsProcessing(false);
   }
 
   const showFavorites = () => {
     if (favorites.length > 0) {
       setCurrentUrls(favorites);
-      setShowProcessor(true);
       setViewMode('favorites');
       setFocusViewActive(false);
       setSelectedUrlForFocus(null);
+      setIsProcessing(false);
     }
   }
 
@@ -97,46 +108,60 @@ export default function Home() {
   }
 
   const renderContent = () => {
-    if (!currentUrls) {
+    if (isProcessing) {
       return (
-         <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
-            <UrlProcessor
-            showForm={!showProcessor}
-            onProcessStart={handleShowProcessor}
-            setHistory={setHistory}
+        <UrlProcessor
+            onProcessStart={handleProcessStart}
+            onProcessComplete={handleProcessComplete}
+            onProgress={setProcessingProgress}
+            isProcessing={isProcessing}
+            processingProgress={processingProgress}
             history={history}
-            initialUrls={currentUrls}
             loadBatch={loadBatchFromHistory}
-            favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
-            onFocusViewChange={setFocusViewActive}
-            />
-         </div>
+          />
       );
     }
 
-    const urlsForGrid = viewMode === 'favorites' ? favorites : currentUrls;
+    if (currentUrls.length > 0) {
+      const urlsForGrid = viewMode === 'favorites' ? favorites : currentUrls;
+
+      return (
+        <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+            {viewMode === 'favorites' && <h2 className="text-3xl font-bold text-center mb-8">My Collection</h2>}
+            <VideoGrid
+                urls={urlsForGrid}
+                favorites={favorites}
+                onToggleFavorite={handleToggleFavorite}
+                onFocusViewChange={setFocusViewActive}
+                onSelectVideo={handleSelectVideoForFocus}
+                selectedUrl={selectedUrlForFocus}
+                onBackToGrid={handleBackToGrid}
+                viewMode={viewMode}
+                gridSize={gridSize}
+                setGridSize={setGridSize}
+                isAutoScrolling={isAutoScrolling}
+                setIsAutoScrolling={setIsAutoScrolling}
+                scrollSpeed={scrollSpeed}
+                setScrollSpeed={setScrollSpeed}
+                history={history}
+                loadBatch={loadBatchFromHistory}
+              />
+        </div>
+      );
+    }
 
     return (
-      <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
-          {viewMode === 'favorites' && <h2 className="text-3xl font-bold text-center mb-8">My Collection</h2>}
-          <VideoGrid
-              urls={urlsForGrid}
-              favorites={favorites}
-              onToggleFavorite={handleToggleFavorite}
-              onFocusViewChange={setFocusViewActive}
-              onSelectVideo={handleSelectVideoForFocus}
-              selectedUrl={selectedUrlForFocus}
-              onBackToGrid={handleBackToGrid}
-              viewMode={viewMode}
-              gridSize={gridSize}
-              setGridSize={setGridSize}
-              isAutoScrolling={isAutoScrolling}
-              setIsAutoScrolling={setIsAutoScrolling}
-              scrollSpeed={scrollSpeed}
-              setScrollSpeed={setScrollSpeed}
-            />
-      </div>
+       <div className="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+          <UrlProcessor
+            onProcessStart={handleProcessStart}
+            onProcessComplete={handleProcessComplete}
+            onProgress={setProcessingProgress}
+            isProcessing={isProcessing}
+            processingProgress={processingProgress}
+            history={history}
+            loadBatch={loadBatchFromHistory}
+          />
+       </div>
     );
   }
 
@@ -164,20 +189,10 @@ export default function Home() {
         )}
 
         <main className="flex-grow overflow-y-auto">
-          {showProcessor ? renderContent() : <UrlProcessor
-            showForm={!showProcessor}
-            onProcessStart={handleShowProcessor}
-            setHistory={setHistory}
-            history={history}
-            initialUrls={currentUrls}
-            loadBatch={loadBatchFromHistory}
-            favorites={favorites}
-            onToggleFavorite={handleToggleFavorite}
-            onFocusViewChange={setFocusViewActive}
-          />}
+          {renderContent()}
         </main>
         
-        {!focusViewActive && (
+        {!focusViewActive && !isProcessing && currentUrls.length === 0 && (
           <footer className="flex items-center justify-center p-4 border-t shrink-0">
             <div className="flex items-center gap-4">
               <p className="text-sm text-muted-foreground">
