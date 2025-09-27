@@ -14,25 +14,27 @@ export default function AccountPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
   const [favoritesCount, setFavoritesCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loadingFavorites, setLoadingFavorites] = useState(true);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading) {
+      return;
+    }
     if (!user) {
       router.push('/login');
       return;
     }
 
     async function fetchFavorites() {
-      setLoading(true);
+      setLoadingFavorites(true);
       const favs = await getFavorites(user.uid);
       setFavoritesCount(favs.length);
-      setLoading(false);
+      setLoadingFavorites(false);
     }
     fetchFavorites();
   }, [user, authLoading, router]);
 
-  if (authLoading || loading || !user) {
+  if (authLoading || loadingFavorites || !user) {
     return (
       <div className="flex flex-col min-h-screen">
         <header className="flex items-center justify-between p-4 border-b shrink-0">

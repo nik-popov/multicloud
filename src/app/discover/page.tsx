@@ -4,7 +4,6 @@
 
 import { UrlProcessor } from '@/components/url-processor';
 import { Button } from '@/components/ui/button';
-import { Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Suspense } from 'react';
@@ -36,12 +35,16 @@ function DiscoverPageContent() {
               </>
             ) : (
               <>
-                <Button variant="ghost" asChild>
-                    <Link href="/login">Log In</Link>
-                </Button>
-                <Button asChild>
-                    <Link href="/signup">Sign Up</Link>
-                </Button>
+                {!loading && (
+                  <>
+                    <Button variant="ghost" asChild>
+                        <Link href="/login">Log In</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/signup">Sign Up</Link>
+                    </Button>
+                  </>
+                )}
               </>
             )}
         </div>
