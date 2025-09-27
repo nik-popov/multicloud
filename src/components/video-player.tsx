@@ -2,23 +2,26 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Library, MousePointer, Fullscreen, Play, Pause, ChevronUp, Volume2, VolumeX } from 'lucide-react';
+import { Heart, Library, MousePointer, Fullscreen, Play, Pause, ChevronUp, Volume2, VolumeX, Settings } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useRef, useState, useEffect } from 'react';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 type VideoPlayerProps = {
   src: string;
   isLiked?: boolean;
   onToggleLike?: () => void;
+  controls?: React.ReactNode;
 };
 
 export function VideoPlayer({
   src,
   isLiked = false,
   onToggleLike = () => {},
+  controls,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -221,6 +224,22 @@ export function VideoPlayer({
             >
               <Fullscreen className="h-6 w-6" />
             </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+                  >
+                    <Settings className="h-6 w-6" />
+                  </Button>
+              </PopoverTrigger>
+              <PopoverContent side="left" className="w-auto bg-card/80 backdrop-blur-md border-white/20 text-white">
+                <div className="w-56">
+                  {controls}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
     </div>

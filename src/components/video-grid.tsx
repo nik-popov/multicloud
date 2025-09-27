@@ -123,21 +123,6 @@ export function VideoGrid({
           >
             <ArrowLeft className="h-6 w-6" />
           </Button>
-
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="secondary" className="bg-card/50 backdrop-blur-sm">
-                <Settings className="mr-2 h-4 w-4" />
-                Advanced
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent side="right" className="w-auto bg-card/80 backdrop-blur-md border-white/20 text-white">
-              <div className="w-56">
-                {controls}
-              </div>
-            </PopoverContent>
-          </Popover>
-
         </div>
          {orderedUrls.length > 1 && (
           <div
@@ -163,6 +148,7 @@ export function VideoGrid({
                 src={url}
                 isLiked={favorites.includes(url)}
                 onToggleLike={() => onToggleFavorite(url)}
+                controls={controls}
               />
             </div>
           ))}
