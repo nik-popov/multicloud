@@ -1,3 +1,4 @@
+
 'use client';
 
 import { UrlProcessor } from '@/components/url-processor';
@@ -81,9 +82,9 @@ export default function Home() {
   }
 
   const handleSelectVideoForFocus = (url: string) => {
+    const urlsForFocus = viewMode === 'favorites' ? favorites : currentUrls ?? [];
+    setCurrentUrls(urlsForFocus);
     setSelectedUrlForFocus(url);
-    // The VideoGrid component will handle switching its internal view to 'focus'
-    // and this component will hide the header via `focusViewActive`.
   };
   
   const handleBackToGrid = () => {
@@ -133,51 +134,18 @@ export default function Home() {
         {!focusViewActive && (
           <header className="flex items-center justify-between p-4 border-b shrink-0">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold tracking-tight text-primary">
+              <h1 className="text-2xl font-bold tracking-tight text-primary cursor-pointer" onClick={handleNewBatch}>
                 bulkshorts
               </h1>
-              <Button variant="secondary" onClick={handleNewBatch}>
-                New Batch
-              </Button>
-              <Button variant="outline" onClick={showFavorites} disabled={favorites.length === 0}>
-                  <Heart className="mr-2" />
-                  Collection ({favorites.length})
-              </Button>
             </div>
              <div className="flex items-center gap-2">
-              {isMobile ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem disabled>Reddit</DropdownMenuItem>
-                    <DropdownMenuItem disabled>X</DropdownMenuItem>
-                    <DropdownMenuItem disabled>IG</DropdownMenuItem>
-                    <DropdownMenuItem disabled>YouTube</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground hidden sm:block">
-                    Sources:
-                  </p>
-                  <Button variant="outline" disabled>
-                    Reddit
-                  </Button>
-                  <Button variant="outline" disabled>
-                    X
-                  </Button>
-                  <Button variant="outline" disabled>
-                    IG
-                  </Button>
-                  <Button variant="outline" disabled>
-                    YouTube
-                  </Button>
-                </>
-              )}
+                <Button variant="secondary" onClick={handleNewBatch}>
+                  New Batch
+                </Button>
+                <Button variant="outline" onClick={showFavorites} disabled={favorites.length === 0}>
+                    <Heart className="mr-2" />
+                    Collection ({favorites.length})
+                </Button>
             </div>
           </header>
         )}
@@ -195,6 +163,28 @@ export default function Home() {
             onFocusViewChange={setFocusViewActive}
           />}
         </main>
+        
+        {!focusViewActive && (
+          <footer className="flex items-center justify-center p-4 border-t shrink-0">
+            <div className="flex items-center gap-4">
+              <p className="text-sm text-muted-foreground">
+                Sources:
+              </p>
+              <Button variant="outline" disabled>
+                Reddit
+              </Button>
+              <Button variant="outline" disabled>
+                X
+              </Button>
+              <Button variant="outline" disabled>
+                IG
+              </Button>
+              <Button variant="outline" disabled>
+                YouTube
+              </Button>
+            </div>
+          </footer>
+        )}
       </div>
   );
 }

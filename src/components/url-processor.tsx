@@ -1,3 +1,4 @@
+
 'use client';
 
 import {validateUrlAction} from '@/app/actions';
@@ -267,7 +268,7 @@ export function UrlProcessor({
 
   return (
     <div className="space-y-8">
-      {showForm && !isPending && view === 'grid' && (
+      {showForm && !isPending && !hasUrls && (
         <>
           <Card className="w-full shadow-lg max-w-3xl mx-auto bg-card/80 backdrop-blur-sm mt-12">
             <form onSubmit={handleSubmit} ref={formRef}>
