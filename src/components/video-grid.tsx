@@ -37,6 +37,17 @@ const safeId = (id: string) => {
   });
 };
 
+const gridColsMap: {[key: number]: string} = {
+  1: 'lg:grid-cols-1',
+  2: 'lg:grid-cols-2',
+  3: 'lg:grid-cols-3',
+  4: 'lg:grid-cols-4',
+  5: 'lg:gridcols-5',
+  6: 'lg:grid-cols-6',
+  7: 'lg:grid-cols-7',
+  8: 'lg:grid-cols-8',
+};
+
 
 export function VideoGrid({
   urls,
@@ -325,7 +336,7 @@ export function VideoGrid({
           </div>
         <div
           ref={scrollContainerRef}
-          className={cn("grid gap-4 md:gap-6", `grid-cols-2 lg:grid-cols-${gridSize}`)}
+          className={cn("grid gap-4 md:gap-6", `grid-cols-2`, gridColsMap[gridSize])}
         >
           {urls.map(url => (
             <div key={url} id={`video-wrapper-${safeId(url)}`} className="w-full">
