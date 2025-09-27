@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Library, MousePointer, Fullscreen, Play, Pause } from 'lucide-react';
+import { Heart, Library, MousePointer, Fullscreen, Play, Pause, ChevronUp } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useRef, useState, useEffect } from 'react';
@@ -30,7 +30,44 @@ export function VideoPlayer({
   const [aspectRatio, setAspectRatio] = useState('9/16');
   const [showHeart, setShowHeart] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(!isFocusView);
+  const [isVisible, setIsVisible] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsVisible(entry.isIntersecting);
+      },
+      { threshold: 0.1 } // Adjust threshold as needed
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+    observerRef.current = observer;
+
+    return () => {
+      if (containerRef.current && observerRef.current) {
+        observerRef.current.unobserve(containerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isVisible && (isFocusView || isPlaying)) {
+        videoRef.current.play().catch(() => {
+          // auto-play was prevented
+        });
+        if (!isFocusView) setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        if (!isFocusView) setIsPlaying(false);
+      }
+    }
+  }, [isVisible, isFocusView]);
+
 
   useEffect(() => {
     if (videoRef.current) {
@@ -104,15 +141,15 @@ export function VideoPlayer({
 
   if (isHistoryCard) {
     return (
-       <div className="w-full h-full">
-         <video
+       <div className="w-full h-full" ref={containerRef}>
+         {isVisible && <video
             src={src}
             className='w-full h-full object-cover'
             autoPlay
             loop
             muted
             playsInline
-         />
+         />}
        </div>
     );
   }
@@ -136,19 +173,19 @@ export function VideoPlayer({
           )}
           onMouseMove={isFocusView ? handleMouseMove : undefined}
         >
-          <video
+          {isVisible && <video
             ref={videoRef}
             src={src}
             className={cn(
               'w-full h-full',
               isFocusView ? 'object-contain' : 'object-cover'
             )}
-            autoPlay
+            autoPlay={isFocusView || isPlaying}
             loop
             muted
             playsInline
             onLoadedMetadata={handleLoadedMetadata}
-          />
+          />}
           {!isPlaying && isFocusView && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="bg-black/50 rounded-full p-4">
@@ -179,20 +216,42 @@ export function VideoPlayer({
 
   if (!isFocusView) {
     return (
-      <div className="w-full h-full relative group flex items-center justify-center">
+      <div className="w-full h-full relative group flex items-center justify-center" ref={containerRef}>
         {videoElement}
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center gap-4 h-full" ref={containerRef}>
-      {/* Empty div for left controls spacing, for now */}
-      <div className="w-[200px]" />
+    <div className="flex items-center justify-center h-full p-0 m-0 w-screen" ref={containerRef}>
+        <div className="w-[200px] flex flex-col items-center gap-4">
+          <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-2 text-sm">
+              <Label
+                htmlFor="speed-control"
+                className="text-white/80 flex-shrink-0"
+              >
+                Speed
+              </Label>
+              <Slider
+                id="speed-control"
+                min={0.5}
+                max={2}
+                step={0.1}
+                value={[playbackRate]}
+                onValueChange={handlePlaybackRateChange}
+                className="w-full"
+              />
+              <span className="font-mono text-xs">
+                {playbackRate.toFixed(1)}x
+              </span>
+            </div>
+          </div>
+        </div>
       
-      {videoElement}
+        {videoElement}
       
-      <div className="w-[200px] flex flex-col items-center gap-4">
+        <div className="w-[200px] flex flex-col items-center gap-4">
           <div className="text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm w-full">
             <p className="font-bold">@creatorname</p>
             <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
@@ -220,28 +279,6 @@ export function VideoPlayer({
           >
             <Fullscreen className="h-6 w-6" />
           </Button>
-          <div className="w-full text-white space-y-2 p-4 bg-black/20 rounded-lg backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-2 text-sm">
-              <Label
-                htmlFor="speed-control"
-                className="text-white/80 flex-shrink-0"
-              >
-                Speed
-              </Label>
-              <Slider
-                id="speed-control"
-                min={0.5}
-                max={2}
-                step={0.1}
-                value={[playbackRate]}
-                onValueChange={handlePlaybackRateChange}
-                className="w-full"
-              />
-              <span className="font-mono text-xs">
-                {playbackRate.toFixed(1)}x
-              </span>
-            </div>
-          </div>
         </div>
     </div>
   );
