@@ -76,7 +76,9 @@ function HomePageContent() {
 
   useEffect(() => {
     const urlsParam = searchParams.get('urls');
-    handleUrlParam(urlsParam);
+    if (urlsParam) {
+      handleUrlParam(urlsParam);
+    }
   }, [searchParams, handleUrlParam]);
 
   useEffect(() => {
@@ -105,20 +107,17 @@ function HomePageContent() {
   }, [user, authLoading]);
 
   const handleToggleFavorite = (url: string) => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
     setFavoritesState(prev => {
       const newFavorites = prev.includes(url)
         ? prev.filter(u => u !== url)
         : [...prev, url];
       
-      if (user) {
-        saveFavorites(user.uid, newFavorites);
-      } else {
-        localStorage.setItem(
-          'bulkshorts_favorites',
-          JSON.stringify(newFavorites)
-        );
-      }
-
+      saveFavorites(user.uid, newFavorites);
+      
       if (viewMode === 'favorites' && !newFavorites.includes(url)) {
         setCurrentUrls(newFavorites);
       }
