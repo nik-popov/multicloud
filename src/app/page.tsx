@@ -5,7 +5,7 @@ import {Button} from '@/components/ui/button';
 import {VideoGrid} from '@/components/video-grid';
 import {Heart, Search} from 'lucide-react';
 import Link from 'next/link';
-import {useEffect, useState, Suspense} from 'react';
+import {useEffect, useState, Suspense, useCallback} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 
 import {useIsMobile} from '@/hooks/use-mobile';
@@ -40,8 +40,7 @@ function HomePageContent() {
   const { user, loading: authLoading } = useAuth();
 
 
-  useEffect(() => {
-    const urlsParam = searchParams.get('urls');
+  const handleUrlParam = useCallback((urlsParam: string | null) => {
     if (urlsParam) {
       try {
         const decodedUrls = JSON.parse(decodeURIComponent(urlsParam));
@@ -73,8 +72,12 @@ function HomePageContent() {
         router.replace('/', undefined);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, user]);
+  }, [user, router]);
+
+  useEffect(() => {
+    const urlsParam = searchParams.get('urls');
+    handleUrlParam(urlsParam);
+  }, [searchParams, handleUrlParam]);
 
   useEffect(() => {
     async function loadUserData() {
@@ -209,7 +212,7 @@ function HomePageContent() {
         {recommendedItems.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-center">Recommended</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {recommendedItems.map((batch, index) => (
                 <div
                   key={`rec-${index}`}
