@@ -26,7 +26,7 @@ export function VideoPlayer({
 
   useEffect(() => {
     if (videoRef.current) {
-        videoRef.current.playbackRate = playbackRate;
+      videoRef.current.playbackRate = playbackRate;
     }
   }, [playbackRate]);
 
@@ -67,18 +67,18 @@ export function VideoPlayer({
           <div
             className={cn(
               'relative w-full bg-black rounded-lg overflow-hidden',
-              isFocusView ? 'aspect-[9/16]' : 'aspect-[9/16]'
+              isFocusView ? 'h-full' : 'aspect-[9/16]'
             )}
+            style={
+              isFocusView ? { height: 'calc(100svh - 4rem)' } : {}
+            }
             onMouseMove={isFocusView ? handleMouseMove : undefined}
           >
             <video
               ref={videoRef}
               src={src}
-              className={cn(
-                'w-full h-full object-cover',
-                 isFocusView ? 'object-contain' : 'object-cover'
-              )}
-              style={isFocusView ? { aspectRatio } : {}}
+              className="w-full h-full object-contain"
+              style={{ aspectRatio }}
               autoPlay
               loop
               muted
@@ -90,7 +90,7 @@ export function VideoPlayer({
       </Card>
       {isFocusView && (
         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent flex flex-col gap-4">
-           <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Input
               type="text"
               placeholder="Add a comment... 😃"
@@ -104,33 +104,38 @@ export function VideoPlayer({
               <Send className="h-5 w-5" />
             </Button>
           </div>
-          <div className="max-w-full text-white space-y-2">
-            <div className="flex justify-between items-center text-sm">
-                <Label htmlFor="speed-control" className="text-white/80">Speed</Label>
-                <span>{playbackRate.toFixed(1)}x</span>
+          <div className="w-full text-white space-y-2">
+            <div className="flex items-center gap-4 text-sm">
+              <Label htmlFor="speed-control" className="text-white/80">
+                Speed
+              </Label>
+              <Slider
+                id="speed-control"
+                min={0.5}
+                max={2}
+                step={0.1}
+                value={[playbackRate]}
+                onValueChange={handlePlaybackRateChange}
+                className="flex-1"
+              />
+              <span className="font-mono w-10 text-right">
+                {playbackRate.toFixed(1)}x
+              </span>
             </div>
-            <Slider
-              id="speed-control"
-              min={0.5}
-              max={2}
-              step={0.1}
-              value={[playbackRate]}
-              onValueChange={handlePlaybackRateChange}
-            />
           </div>
         </div>
       )}
-       {isFocusView && (
+      {isFocusView && (
         <div className="absolute top-4 right-4">
-             <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:text-red-500 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
-            >
-              <Heart className="h-6 w-6" />
-            </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:text-red-500 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+          >
+            <Heart className="h-6 w-6" />
+          </Button>
         </div>
-       )}
+      )}
     </div>
   );
 }
