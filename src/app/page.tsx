@@ -166,12 +166,11 @@ function HomePageContent() {
   };
 
   const renderContent = () => {
-    if (isLoading || authLoading) {
+    if (isLoading && authLoading) {
        return (
         <div className="flex flex-col items-center justify-center h-full pt-20">
           <div className="text-center w-full max-w-md mx-auto space-y-4">
             <Loader2 className="mr-2 h-8 w-8 animate-spin inline-block" />
-            <p>Loading your space...</p>
           </div>
         </div>
       );
@@ -284,11 +283,6 @@ function HomePageContent() {
             </Link>
           </div>
           <div className="flex items-center gap-2">
-            {!isMobile && (
-              <Button variant="secondary" asChild>
-                <Link href="/discover">New Batch</Link>
-              </Button>
-            )}
              <Button
               variant="outline"
               onClick={showFavorites}

@@ -81,11 +81,6 @@ function AccountPageContent() {
           </Link>
         </div>
          <div className="flex items-center gap-2">
-            {!isMobile && (
-              <Button variant="secondary" asChild>
-                <Link href="/discover">New Batch</Link>
-              </Button>
-            )}
             <Button onClick={signOut}>
               Log Out
             </Button>
@@ -93,10 +88,16 @@ function AccountPageContent() {
       </header>
       <main className="flex-grow p-4 md:p-8 space-y-8">
         <div className="container mx-auto max-w-6xl">
-            <div className="space-y-2 mb-8">
-                <h1 className="text-3xl font-bold tracking-tight">Welcome, {user.email}</h1>
-                <p className="text-muted-foreground">Here's a summary of your activity and saved content.</p>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">
+              <div className="space-y-2">
+                  <h1 className="text-3xl font-bold tracking-tight">Welcome, {user.email}</h1>
+                  <p className="text-muted-foreground">Here's a summary of your activity and saved content.</p>
+              </div>
+               <Button asChild>
+                <Link href="/discover">Create New Batch</Link>
+              </Button>
             </div>
+
 
             <Card className="mb-8">
                 <CardHeader>
