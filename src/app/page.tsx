@@ -197,17 +197,16 @@ export default function Home() {
 
         <main className="flex-grow overflow-y-auto">
           {renderContent()}
+          {!focusViewActive && !isProcessing && currentUrls.length === 0 && (
+            <footer className="flex items-center justify-center p-4 border-t">
+              <div className="flex items-center gap-4">
+                <Button variant="outline" asChild>
+                  <Link href="https://x.com" target="_blank">X</Link>
+                </Button>
+              </div>
+            </footer>
+          )}
         </main>
-        
-        {!focusViewActive && !isProcessing && currentUrls.length === 0 && (
-          <footer className="flex items-center justify-center p-4 border-t shrink-0">
-            <div className="flex items-center gap-4">
-              <Button variant="outline" asChild>
-                <Link href="https://x.com" target="_blank">X</Link>
-              </Button>
-            </div>
-          </footer>
-        )}
       </div>
   );
 }
