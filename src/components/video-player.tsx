@@ -2,10 +2,10 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Library, MousePointer, Fullscreen, Play, Pause, ChevronUp, Volume2, VolumeX, Settings } from 'lucide-react';
+import { Heart, MousePointer, Fullscreen, Play, Pause, Settings, Volume2, VolumeX } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -42,12 +42,21 @@ export function VideoPlayer({
     setIsLiked(initialIsLiked);
   }, [initialIsLiked]);
   
-  useEffect(() => {
-    if (videoRef.current) {
-        // Start playing the video when the component mounts
-        videoRef.current.play().catch(() => setIsPlaying(false));
+  const attemptPlay = useCallback(() => {
+    if (videoRef.current && videoRef.current.paused) {
+      videoRef.current.play().catch(() => {
+        // Autoplay was prevented. User needs to interact.
+        setIsPlaying(false);
+      });
     }
-  }, [src]);
+  }, []);
+
+  useEffect(() => {
+    // This effect is for when the video source changes.
+    if (videoRef.current) {
+        attemptPlay();
+    }
+  }, [src, attemptPlay]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -100,8 +109,7 @@ export function VideoPlayer({
       } else {
         setAspectRatio('9/16');
       }
-      // ensure autoplay on load
-      videoRef.current.play().catch(() => setIsPlaying(false));
+      attemptPlay();
       setIsPlaying(!videoRef.current.paused);
     }
   };
@@ -138,10 +146,8 @@ export function VideoPlayer({
     if (videoRef.current) {
       if (videoRef.current.paused) {
         videoRef.current.play();
-        setIsPlaying(true);
       } else {
         videoRef.current.pause();
-        setIsPlaying(false);
       }
     }
   };
@@ -173,6 +179,7 @@ export function VideoPlayer({
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
+            autoPlay
           />
           {!isPlaying && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -271,3 +278,5 @@ export function VideoPlayer({
     </div>
   );
 }
+
+    
