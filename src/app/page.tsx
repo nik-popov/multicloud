@@ -1,5 +1,4 @@
 import { UrlProcessor } from '@/components/url-processor';
-import { VideoPlayer } from '@/components/video-player';
 import { Flame } from 'lucide-react';
 
 export default function Home() {
@@ -27,31 +26,11 @@ export default function Home() {
           VideoBucket
         </h1>
         <p className="mt-4 text-lg text-muted-foreground">
-          Your one-stop tool to validate, clean, and manage video URLs with the
+          Your one-stop tool to validate, clean, and discover video content with the
           power of AI.
         </p>
       </header>
-
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-        <div className="lg:col-span-3">
-          <UrlProcessor />
-        </div>
-        <div className="lg:col-span-2">
-          <div className="space-y-8">
-            <VideoPlayer />
-            <div className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
-              <div className="flex items-center gap-3">
-                <Flame className="h-6 w-6 text-accent" />
-                <h3 className="text-lg font-semibold">Powered by AI</h3>
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Our generative AI works like a human assistant, intelligently
-                identifying and filtering out invalid URLs from your list.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <UrlProcessor />
     </main>
   );
 }
