@@ -13,11 +13,11 @@ import {
 } from '@/components/ui/card';
 import {Textarea} from '@/components/ui/textarea';
 import {ArrowLeft, Loader2} from 'lucide-react';
-import {useEffect, useRef, useState, useMemo, useTransition} from 'react';
+import {useEffect, useRef, useState, useTransition} from 'react';
 import {VideoGrid} from './video-grid';
 import {Slider} from './ui/slider';
 import {Label} from './ui/label';
-import { Switch } from './ui/switch';
+import {Switch} from './ui/switch';
 
 export function UrlProcessor() {
   const [urls, setUrls] = useState<string[]>([]);
@@ -36,10 +36,10 @@ export function UrlProcessor() {
   const hasUrls = urls.length > 0;
 
   useEffect(() => {
-    if (isAutoScrolling) {
+    if (isAutoScrolling && view === 'grid') {
       scrollIntervalRef.current = setInterval(() => {
-        window.scrollBy({ top: 1, behavior: 'smooth' });
-      }, 50); 
+        window.scrollBy({top: 1, behavior: 'smooth'});
+      }, 50);
     } else {
       if (scrollIntervalRef.current) {
         clearInterval(scrollIntervalRef.current);
@@ -50,21 +50,23 @@ export function UrlProcessor() {
         clearInterval(scrollIntervalRef.current);
       }
     };
-  }, [isAutoScrolling]);
+  }, [isAutoScrolling, view]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const urlsToValidate = (formData.get('urls') as string)?.split('\n').filter(Boolean);
+    const urlsToValidate = (formData.get('urls') as string)
+      ?.split('\n')
+      .filter(Boolean);
 
     if (!urlsToValidate || urlsToValidate.length === 0) {
       setError('Please enter at least one URL.');
       return;
     }
-    
+
     setUrls([]);
     setError(null);
-    resultRef.current?.scrollIntoView({ behavior: 'smooth' });
+    resultRef.current?.scrollIntoView({behavior: 'smooth'});
 
     startTransition(async () => {
       for (const url of urlsToValidate) {
@@ -85,30 +87,10 @@ export function UrlProcessor() {
     setIsAutoScrolling(false);
   };
 
-  useEffect(() => {
-    if (view === 'focus' && selectedUrl) {
-      const element = document.getElementById(`video-wrapper-${selectedUrl}`);
-      element?.scrollIntoView({behavior: 'auto', block: 'start'});
-    }
-  }, [view, selectedUrl]);
-
   const handleBackToGrid = () => {
     setView('grid');
     setSelectedUrl(null);
   };
-
-  const orderedUrls = useMemo(() => {
-    if (!urls) return [];
-    if (!selectedUrl) return urls;
-
-    const newUrls = [...urls];
-    const index = newUrls.indexOf(selectedUrl);
-    if (index > -1) {
-      const [item] = newUrls.splice(index, 1);
-      newUrls.unshift(item);
-    }
-    return newUrls;
-  }, [selectedUrl, urls]);
 
   return (
     <div className="space-y-8">
@@ -132,7 +114,11 @@ export function UrlProcessor() {
               />
             </CardContent>
             <CardFooter className="flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
+              <Button
+                type="submit"
+                disabled={isPending}
+                className="w-full sm:w-auto"
+              >
                 {isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -155,17 +141,54 @@ export function UrlProcessor() {
         </Card>
       )}
 
-      {(isPending && !hasUrls) && (
+      {isPending && !hasUrls && (
         <div className="text-center">
-            <Loader2 className="mr-2 h-8 w-8 animate-spin inline-block" />
-            <p>Validating URLs...</p>
+          <Loader2 className="mr-2 h-8 w-8 animate-spin inline-block" />
+          <p>Validating URLs...</p>
         </div>
       )}
-
 
       <div ref={resultRef} className="relative">
         {hasUrls && (
           <div className="space-y-4">
+            {view === 'grid' && (
+              <div className="fixed top-4 left-4 z-50 flex flex-col gap-4">
+                <Card className="p-3 bg-card/80 backdrop-blur-sm">
+                  <CardContent className="p-0 flex flex-col items-center gap-2">
+                    <Label
+                      htmlFor="auto-scroll"
+                      className="text-sm font-medium"
+                    >
+                      Auto-Scroll
+                    </Label>
+                    <Switch
+                      id="auto-scroll"
+                      checked={isAutoScrolling}
+                      onCheckedChange={setIsAutoScrolling}
+                      aria-label="Toggle auto-scroll"
+                    />
+                  </CardContent>
+                </Card>
+                <Card className="p-3 bg-card/80 backdrop-blur-sm max-w-[200px]">
+                  <CardContent className="p-0 space-y-2">
+                    <div className="flex justify-between items-center gap-4">
+                      <Label htmlFor="grid-size" className="flex-shrink-0">
+                        Grid Size
+                      </Label>
+                      <span className="text-sm font-medium">{gridSize}</span>
+                    </div>
+                    <Slider
+                      id="grid-size"
+                      min={1}
+                      max={8}
+                      step={1}
+                      value={[gridSize]}
+                      onValueChange={value => setGridSize(value[0])}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
             {view === 'focus' && (
               <Button
                 variant="secondary"
@@ -177,42 +200,11 @@ export function UrlProcessor() {
                 Back to Grid
               </Button>
             )}
-            {view === 'grid' && (
-              <div className="flex items-start justify-between">
-                <div className="max-w-xs space-y-2">
-                  <div className="flex justify-between items-center">
-                    <Label htmlFor="grid-size">Grid Size</Label>
-                    <span className="text-sm font-medium">
-                      {gridSize} Columns
-                    </span>
-                  </div>
-                  <Slider
-                    id="grid-size"
-                    min={1}
-                    max={8}
-                    step={1}
-                    value={[gridSize]}
-                    onValueChange={value => setGridSize(value[0])}
-                  />
-                </div>
-              </div>
-            )}
-             {view === 'grid' && (
-              <Card className="fixed top-1/2 right-4 -translate-y-1/2 z-50 p-3 bg-card/80 backdrop-blur-sm">
-                <CardContent className="p-0 flex flex-col items-center gap-2">
-                  <Label htmlFor="auto-scroll" className="text-sm font-medium">Auto-Scroll</Label>
-                  <Switch
-                    id="auto-scroll"
-                    checked={isAutoScrolling}
-                    onCheckedChange={setIsAutoScrolling}
-                    aria-label="Toggle auto-scroll"
-                  />
-                </CardContent>
-              </Card>
-            )}
+
             <VideoGrid
-              urls={orderedUrls ?? []}
+              urls={urls ?? []}
               view={view}
+              selectedUrl={selectedUrl}
               onSelectVideo={handleSelectVideo}
               gridCols={gridSize}
             />
