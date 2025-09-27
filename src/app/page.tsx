@@ -13,11 +13,16 @@ import {Input} from '@/components/ui/input';
 import {VideoCard} from '@/components/video-card';
 import {Loader2} from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { getFavorites, saveFavorites, migrateFavorites } from '@/lib/firestore';
+import { getFavorites, saveFavorites, migrateFavorites, getHistory, saveHistory, migrateHistory } from '@/lib/firestore';
+
+type HistoryItem = {
+  timestamp: string;
+  urls: string[];
+};
 
 function HomePageContent() {
   const [currentUrls, setCurrentUrls] = useState<string[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [favorites, setFavoritesState] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'main' | 'favorites'>('main');
   const [focusViewActive, setFocusViewActive] = useState(false);
@@ -42,11 +47,10 @@ function HomePageContent() {
         const decodedUrls = JSON.parse(decodeURIComponent(urlsParam));
         setCurrentUrls(decodedUrls);
         if (decodedUrls.length > 0) {
-          const newBatch = {
+          const newBatch: HistoryItem = {
             timestamp: new Date().toISOString(),
             urls: decodedUrls,
           };
-          // Avoid adding duplicates to history
           setHistory(prevHistory => {
             const isDuplicate = prevHistory.some(
               batch => JSON.stringify(batch.urls) === JSON.stringify(decodedUrls)
@@ -54,39 +58,41 @@ function HomePageContent() {
             if (isDuplicate) {
               return prevHistory;
             }
-            const updatedHistory = [newBatch, ...prevHistory].slice(0, 50); // Limit history size
-            localStorage.setItem(
-              'bulkshorts_history',
-              JSON.stringify(updatedHistory)
-            );
+            const updatedHistory = [newBatch, ...prevHistory].slice(0, 50);
+            if (user) {
+              saveHistory(user.uid, updatedHistory);
+            } else {
+              localStorage.setItem('bulkshorts_history', JSON.stringify(updatedHistory));
+            }
             return updatedHistory;
           });
         }
-        // Remove URL params after processing
         router.replace('/', undefined);
       } catch (e) {
         console.error('Failed to parse URLs from query param', e);
         router.replace('/', undefined);
       }
-    } else {
-        const storedHistory = localStorage.getItem('bulkshorts_history');
-        if (storedHistory) {
-            setHistory(JSON.parse(storedHistory));
-        }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [searchParams, user]);
 
   useEffect(() => {
     async function loadUserData() {
-      // Don't set loading to true here to avoid blocking UI
+      setIsLoading(true);
       if (user) {
         await migrateFavorites(user.uid);
-        const dbFavorites = await getFavorites(user.uid);
+        await migrateHistory(user.uid);
+        const [dbFavorites, dbHistory] = await Promise.all([
+            getFavorites(user.uid),
+            getHistory(user.uid)
+        ]);
         setFavoritesState(dbFavorites);
+        setHistory(dbHistory);
       } else {
         const localFavorites = localStorage.getItem('bulkshorts_favorites');
         setFavoritesState(localFavorites ? JSON.parse(localFavorites) : []);
+        const localHistory = localStorage.getItem('bulkshorts_history');
+        setHistory(localHistory ? JSON.parse(localHistory) : []);
       }
        setIsLoading(false);
     }
@@ -95,16 +101,6 @@ function HomePageContent() {
         loadUserData();
     }
   }, [user, authLoading]);
-  
-   useEffect(() => {
-    // This effect runs once on initial mount to load history
-    const storedHistory = localStorage.getItem('bulkshorts_history');
-    if (storedHistory) {
-      setHistory(JSON.parse(storedHistory));
-    }
-     setIsLoading(false);
-  }, []); 
-
 
   const handleToggleFavorite = (url: string) => {
     setFavoritesState(prev => {
@@ -128,13 +124,8 @@ function HomePageContent() {
     });
   };
 
-  const handleNewBatch = () => {
-    router.push('/discover');
-  };
-
   const loadBatchFromHistory = (urls: string[]) => {
     setCurrentUrls(prevUrls => {
-      // Simple check to avoid prepending the same batch multiple times
       if (JSON.stringify(prevUrls.slice(0, urls.length)) === JSON.stringify(urls)) {
         return prevUrls;
       }
@@ -166,7 +157,7 @@ function HomePageContent() {
   };
 
   const renderContent = () => {
-    if (isLoading && authLoading) {
+    if (isLoading) {
        return (
         <div className="flex flex-col items-center justify-center h-full pt-20">
           <div className="text-center w-full max-w-md mx-auto space-y-4">
@@ -292,11 +283,9 @@ function HomePageContent() {
               Favorites {isLoading ? '' : `(${favorites.length})`}
             </Button>
             {user && !authLoading ? (
-              <>
-                <Button variant="outline" asChild>
-                    <Link href="/account">Account</Link>
-                </Button>
-              </>
+              <Button variant="outline" asChild>
+                  <Link href="/account">Account</Link>
+              </Button>
             ) : (
               <>
                 {!authLoading && (

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { useEffect, useState, Suspense } from 'react';
-import { getFavorites } from '@/lib/firestore';
+import { getFavorites, getHistory } from '@/lib/firestore';
 import { Heart, Loader2 } from 'lucide-react';
 import { VideoCard } from '@/components/video-card';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -20,7 +20,6 @@ type HistoryItem = {
 function AccountPageContent() {
   const { user, loading: authLoading, signOut } = useAuth();
   const router = useRouter();
-  const isMobile = useIsMobile();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -36,13 +35,12 @@ function AccountPageContent() {
 
     async function fetchData() {
       setLoadingData(true);
-      const favs = await getFavorites(user.uid);
+      const [favs, userHistory] = await Promise.all([
+        getFavorites(user.uid),
+        getHistory(user.uid),
+      ]);
       setFavorites(favs);
-
-      const storedHistory = localStorage.getItem('bulkshorts_history');
-      if (storedHistory) {
-        setHistory(JSON.parse(storedHistory));
-      }
+      setHistory(userHistory);
       setLoadingData(false);
     }
     fetchData();
