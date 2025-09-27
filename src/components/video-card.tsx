@@ -81,7 +81,7 @@ export function VideoCard({
               loop
               muted
               playsInline
-              autoPlay={!isHistoryCard}
+              autoPlay
             />
             {isLiked && (
               <div className="absolute top-2 right-2 pointer-events-none">

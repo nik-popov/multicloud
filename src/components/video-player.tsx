@@ -2,7 +2,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, Library, MousePointer, Fullscreen, Play, Pause, ChevronUp } from 'lucide-react';
+import { Heart, Library, MousePointer, Fullscreen, Play, Pause, ChevronUp, Volume2, VolumeX } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useRef, useState, useEffect } from 'react';
@@ -25,6 +25,7 @@ export function VideoPlayer({
   const [aspectRatio, setAspectRatio] = useState('9/16');
   const [showHeart, setShowHeart] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -38,6 +39,12 @@ export function VideoPlayer({
       videoRef.current.playbackRate = playbackRate;
     }
   }, [playbackRate]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
   
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!videoRef.current) return;
@@ -98,6 +105,10 @@ export function VideoPlayer({
     }
   };
 
+  const handleToggleMute = () => {
+    setIsMuted(prev => !prev);
+  }
+
   const videoElement = (
     <Card
       className='bg-black w-auto h-full shadow-lg overflow-hidden transition-all duration-300 rounded-2xl'
@@ -115,7 +126,7 @@ export function VideoPlayer({
             src={src}
             className='w-full h-full object-contain'
             loop
-            muted
+            muted={isMuted}
             playsInline
             onLoadedMetadata={handleLoadedMetadata}
             onPlay={() => setIsPlaying(true)}
@@ -186,6 +197,14 @@ export function VideoPlayer({
               className="text-white hover:text-red-500 bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
             >
               <Heart className={cn("h-6 w-6", isLiked && "fill-red-500")} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleToggleMute}
+              className="text-white hover:text-primary bg-black/50 md:bg-white/10 hover:bg-white/10 transition-colors duration-200 drop-shadow-lg backdrop-blur-sm rounded-full w-12 h-12"
+            >
+              {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
             </Button>
             <Button
               variant="ghost"
