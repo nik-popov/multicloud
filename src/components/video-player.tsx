@@ -162,8 +162,19 @@ export function VideoPlayer({
   return (
     <div className="w-full h-full relative group flex items-center justify-center">
         <div className="flex items-center justify-center h-full w-full">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 md:relative md:top-auto md:left-auto md:-translate-y-0 w-auto md:w-[200px] flex-col items-center gap-4 flex z-10">
-            <Popover>
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 md:relative md:top-auto md:left-auto md:-translate-y-0 w-auto md:w-[200px] flex-col items-center gap-4 hidden md:flex z-10">
+          </div>
+        
+          <div className="w-full md:w-auto h-full flex items-center justify-center">
+              {videoElement}
+          </div>
+        
+          <div className="absolute right-4 bottom-4 md:relative md:bottom-auto md:right-auto w-auto md:w-[200px] flex flex-col items-center gap-4">
+            <div className="text-white space-y-2 p-4 bg-black/50 md:bg-black/20 rounded-lg backdrop-blur-sm w-full hidden md:block">
+              <p className="font-bold">@creatorname</p>
+              <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
+            </div>
+             <Popover>
               <PopoverTrigger asChild>
                   <Button
                     variant="ghost"
@@ -173,7 +184,7 @@ export function VideoPlayer({
                     <Settings className="h-6 w-6" />
                   </Button>
               </PopoverTrigger>
-              <PopoverContent side="right" className="w-auto bg-black/50 backdrop-blur-md border-white/20 text-white md:bg-card/80">
+              <PopoverContent side="left" className="w-auto bg-black/50 backdrop-blur-md border-white/20 text-white md:bg-card/80">
                 <div className="w-56 space-y-4">
                   {controls}
                   <div className="w-full text-white space-y-2">
@@ -201,17 +212,6 @@ export function VideoPlayer({
                 </div>
               </PopoverContent>
             </Popover>
-          </div>
-        
-          <div className="w-full md:w-auto h-full flex items-center justify-center">
-              {videoElement}
-          </div>
-        
-          <div className="absolute right-4 bottom-4 md:relative md:bottom-auto md:right-auto w-auto md:w-[200px] flex flex-col items-center gap-4">
-            <div className="text-white space-y-2 p-4 bg-black/50 md:bg-black/20 rounded-lg backdrop-blur-sm w-full hidden md:block">
-              <p className="font-bold">@creatorname</p>
-              <p className='text-sm text-white/80'>This is a sample video description. #awesome #video</p>
-            </div>
             <Button
               variant="ghost"
               size="icon"
