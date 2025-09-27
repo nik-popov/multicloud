@@ -5,6 +5,7 @@ import {ArrowLeft, ChevronDown} from 'lucide-react';
 import {useMemo, useEffect, useRef} from 'react';
 import {Card, CardHeader, CardTitle, CardContent} from './ui/card';
 import {Button} from './ui/button';
+import { Separator } from './ui/separator';
 
 type VideoGridProps = {
   urls: string[];
@@ -118,28 +119,17 @@ export function VideoGrid({
         ))}
       </div>
       {otherHistory.length > 0 && isGridView && (
-        <div className="mt-16">
-          <Card className="max-w-lg mx-auto">
-            <CardHeader>
-              <CardTitle>Continue Browsing?</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <p className="text-muted-foreground">
-                You've reached the end of this batch. Select another batch from
-                your history to continue.
-              </p>
-              {otherHistory.slice(0, 5).map(batch => (
-                <Button
-                  key={batch.timestamp}
-                  variant="secondary"
-                  onClick={() => loadBatch(batch.urls)}
-                >
-                  {new Date(batch.timestamp).toLocaleString()} ({batch.urls.length}{' '}
-                  videos)
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
+        <div className="mt-16 text-center">
+            <Separator className="my-8" />
+            <h3 className="text-xl font-semibold mb-2">
+              Next Batch: {new Date(otherHistory[0].timestamp).toLocaleString()}
+            </h3>
+            <p className="text-muted-foreground mb-4">
+              {otherHistory[0].urls.length} videos
+            </p>
+            <Button onClick={() => loadBatch(otherHistory[0].urls)}>
+                Load Next Batch
+            </Button>
         </div>
       )}
     </div>
