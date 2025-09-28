@@ -107,7 +107,7 @@ function LoginPageContent() {
               </div>
             </form>
           </CardContent>
-        </card>
+        </Card>
       </main>
     </div>
   );
