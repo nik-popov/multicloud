@@ -14,10 +14,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { importFromS3Action, listGoogleDriveFilesAction } from '@/app/actions';
+import { importFromS3Action, importFromGoogleDriveAction } from '@/app/actions';
 import { useRef, useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
 
 export function AdditionalSourceDialog({
   onUrls,
@@ -26,7 +25,6 @@ export function AdditionalSourceDialog({
 }) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-  const { user, signInWithGoogle } = useAuth();
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -42,21 +40,15 @@ export function AdditionalSourceDialog({
     });
   };
 
-  const handleGoogleDriveImport = async () => {
-    if (!user) {
-      await signInWithGoogle();
-    }
-    const accessToken = await user?.getIdToken();
-    if (accessToken) {
-      startTransition(async () => {
-        const result = await listGoogleDriveFilesAction(accessToken);
-        onUrls(result.urls);
-        toast({
-          title: 'Imported from Google Drive!',
-          description: `${result.urls.length} video files have been imported.`,
-        });
+  const handleGoogleDriveImport = () => {
+    startTransition(async () => {
+      const result = await importFromGoogleDriveAction();
+      onUrls(result.urls);
+      toast({
+        title: 'Imported from Google Drive!',
+        description: `${result.urls.length} video files have been imported.`,
       });
-    }
+    });
   };
 
   return (
@@ -64,7 +56,7 @@ export function AdditionalSourceDialog({
       <DialogTrigger asChild>
         <Button variant="outline">Add from other sources</Button>
       </DialogTrigger>
-      <DialogContent className="sm:maxw-[425px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add from other sources</DialogTitle>
           <DialogDescription>

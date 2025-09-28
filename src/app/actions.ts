@@ -5,6 +5,8 @@ import {z} from 'zod';
 import { storage } from '@/lib/firebase-admin';
 import AWS from 'aws-sdk';
 import { google } from 'googleapis';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const actionSchema = z.object({
   urls: z.array(z.string().min(1, {message: 'URL cannot be empty.'})).min(1),
@@ -99,20 +101,29 @@ export async function importFromS3Action(formData: FormData) {
   return { urls };
 }
 
-export async function listGoogleDriveFilesAction(accessToken: string) {
+export async function importFromGoogleDriveAction() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    throw new Error('Unauthorized');
+  }
+
   const oauth2Client = new google.auth.OAuth2();
-  oauth2Client.setCredentials({ access_token: accessToken });
+  oauth2Client.setCredentials({ access_token: session.accessToken });
+
   const drive = google.drive({ version: 'v3', auth: oauth2Client });
 
   const { data } = await drive.files.list({
-    q: "mimeType='video/mp4' or mimeType='video/quicktime' or mimeType='video/x-matroska' or mimeType='video/x-msvideo' or mimeType='video/x-ms-wmv'",
+    pageSize: 100,
     fields: 'files(id, name, webViewLink, webContentLink)',
+    q: "mimeType contains 'video/'",
   });
 
   if (!data.files) {
     return { urls: [] };
   }
 
-  const urls = data.files.map((file) => file.webContentLink as string);
+  const urls = data.files.map((file) => file.webContentLink || file.webViewLink);
+
   return { urls };
 }
