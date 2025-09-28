@@ -1,5 +1,5 @@
 
-'use client';
+// 'use client';
 
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
