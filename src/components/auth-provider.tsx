@@ -14,6 +14,7 @@ import {
 } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import type { AuthContextType } from '@/hooks/use-auth';
+import { SessionProvider } from 'next-auth/react';
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -73,5 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signInWithGoogle,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <SessionProvider>
+      <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    </SessionProvider>
+  );
 }
