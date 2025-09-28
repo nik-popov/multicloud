@@ -170,7 +170,7 @@ export function VideoPlayer({
 
   const videoElement = (
     <Card
-      className='bg-black w-auto h-full shadow-lg overflow-hidden transition-all duration-300 rounded-2xl'
+      className='bg-black w-full h-full shadow-lg overflow-hidden transition-all duration-300 rounded-2xl'
       style={{aspectRatio: aspectRatio}}
       onClick={handleVideoClick}
       onDoubleClick={handleDoubleClick}
@@ -183,7 +183,7 @@ export function VideoPlayer({
         >
           <video
             ref={videoRef}
-            src={src}
+            src={`${src}#t=0.1`}
             className='w-full h-full object-contain'
             loop
             muted={isMuted}
@@ -192,6 +192,7 @@ export function VideoPlayer({
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
             autoPlay
+            preload="metadata"
           />
           {!isPlaying && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">

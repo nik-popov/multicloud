@@ -37,7 +37,20 @@ export type ValidateAndFilterUrlsOutput = z.infer<
 export async function validateAndFilterUrls(
   input: ValidateAndFilterUrlsInput
 ): Promise<ValidateAndFilterUrlsOutput> {
-  return validateAndFilterUrlsFlow(input);
+  const validatedUrls = await Promise.all(
+    input.urls.map(async (url) => {
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        const contentType = response.headers.get('Content-Type');
+        const isValid = response.ok && contentType?.startsWith('video/') || false;
+        return { originalUrl: url, isValid };
+      } catch (error) {
+        return { originalUrl: url, isValid: false };
+      }
+    })
+  );
+
+  return { validatedUrls };
 }
 
 const validateUrlsPrompt = ai.definePrompt({

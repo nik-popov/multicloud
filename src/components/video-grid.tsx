@@ -43,8 +43,6 @@ const gridColsMap: {[key: number]: string} = {
   4: 'lg:grid-cols-4',
   5: 'lg:grid-cols-5',
   6: 'lg:grid-cols-6',
-  7: 'lg:grid-cols-7',
-  8: 'lg:grid-cols-8',
 };
 
 
@@ -228,7 +226,7 @@ export function VideoGrid({
             <Slider
               id="grid-size"
               min={1}
-              max={8}
+              max={6}
               step={1}
               value={[gridSize]}
               onValueChange={value => setGridSize(value[0])}
