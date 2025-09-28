@@ -1,6 +1,6 @@
 'use client';
 
-import {validateUrlsAction} from '@/app/actions';
+import {validateUrlsAction, uploadFilesAction} from '@/app/actions';
 import {Alert, AlertDescription} from '@/components/ui/alert';
 import {Button} from '@/components/ui/button';
 import {
@@ -17,11 +17,13 @@ import {useRef, useState, useTransition} from 'react';
 import {useToast} from '@/hooks/use-toast';
 import {Progress} from '@/components/ui/progress';
 import { useRouter } from 'next/navigation';
+import { AdditionalSourceDialog } from './additional-source-dialog';
 
 export function UrlProcessor() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] =
+useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -84,7 +86,7 @@ export function UrlProcessor() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
-
+  
     const videoFiles = Array.from(files).filter(file =>
       file.type.startsWith('video/')
     );
@@ -96,20 +98,34 @@ export function UrlProcessor() {
       });
       return;
     }
-
-    const objectUrls = videoFiles.map(file => URL.createObjectURL(file));
-    if (textareaRef.current) {
-      const existingUrls = textareaRef.current.value.split('\n').filter(Boolean);
-      textareaRef.current.value = [...existingUrls, ...objectUrls].join('\n');
-    }
-    toast({
-      title: 'Files added!',
-      description: `${videoFiles.length} video files have been added to the text area.`,
+  
+    const formData = new FormData();
+    videoFiles.forEach(file => {
+      formData.append('files', file);
+    });
+  
+    startTransition(async () => {
+      const result = await uploadFilesAction(formData);
+      if (textareaRef.current) {
+        const existingUrls = textareaRef.current.value.split('\n').filter(Boolean);
+        textareaRef.current.value = [...existingUrls, ...result.urls].join('\n');
+      }
+      toast({
+        title: 'Files uploaded!',
+        description: `${videoFiles.length} video files have been uploaded and added to the text area.`,
+      });
     });
   };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleUrls = (urls: string[]) => {
+    if (textareaRef.current) {
+      const existingUrls = textareaRef.current.value.split('\n').filter(Boolean);
+      textareaRef.current.value = [...existingUrls, ...urls].join('\n');
+    }
   };
 
   if (isProcessing) {
@@ -180,6 +196,7 @@ export function UrlProcessor() {
               <Upload className="mr-2 h-4 w-4" />
               Upload Files
             </Button>
+            <AdditionalSourceDialog onUrls={handleUrls} />
           </div>
           {error && (
             <Alert

@@ -1,10 +1,9 @@
 
-
 'use client';
 import {cn} from '@/lib/utils';
 import {VideoPlayer} from './video-player';
 import {ArrowLeft, ChevronDown, ChevronUp} from 'lucide-react';
-import {useMemo, useEffect, useRef, useCallback} from 'react';
+import {useMemo, useEffect, useRef, useCallback, useState} from 'react';
 import {Button} from './ui/button';
 import { VideoCard } from './video-card';
 import { Card, CardContent } from './ui/card';
@@ -70,6 +69,7 @@ export function VideoGrid({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const loaderRef = useRef<HTMLDivElement | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   const view = selectedUrl ? 'focus' : 'grid';
 
@@ -257,6 +257,39 @@ export function VideoGrid({
       </div>
   );
 
+  useEffect(() => {
+    if (view === 'focus') {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              const index = orderedUrls.findIndex(
+                (url) => `video-wrapper-${safeId(url)}` === entry.target.id
+              );
+              if (index !== -1) {
+                setCurrentIndex(index);
+              }
+            }
+          });
+        },
+        { threshold: 0.5 }
+      );
+  
+      const videoElements = document.querySelectorAll('[data-video-wrapper]');
+      videoElements.forEach((el) => observer.observe(el));
+  
+      return () => {
+        videoElements.forEach((el) => observer.unobserve(el));
+      };
+    }
+  }, [orderedUrls, view]);
+  
+  useEffect(() => {
+    if (currentIndex >= orderedUrls.length && orderedUrls.length > 0) {
+      setCurrentIndex(orderedUrls.length - 1);
+    }
+  }, [orderedUrls, currentIndex]);
+
   if (view === 'focus') {
     return (
       <div className="fixed inset-0 bg-black z-50">
@@ -276,16 +309,18 @@ export function VideoGrid({
           data-focus-view-container
           className="flex flex-col items-center snap-y snap-mandatory h-full overflow-y-scroll"
         >
-          {orderedUrls.map(url => (
+          {orderedUrls.map((url, index) => (
             <div
               key={url}
               id={`video-wrapper-${safeId(url)}`}
+              data-video-wrapper
               className="snap-start h-full w-full flex items-center justify-center"
             >
               <VideoPlayer
                 src={url}
                 isLiked={favorites.includes(url)}
                 onToggleLike={() => onToggleFavorite(url)}
+                isInView={index === currentIndex}
                 controls={
                   <Controls />
                 }

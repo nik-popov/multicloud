@@ -13,7 +13,7 @@ import { Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function LoginPageContent() {
-  const { signIn, loading } = useAuth();
+  const { signIn, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,6 +24,16 @@ function LoginPageContent() {
     setError(null);
     try {
       await signIn(email, password);
+      router.push('/');
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    try {
+      await signInWithGoogle();
       router.push('/');
     } catch (err: any) {
       setError(err.message);
@@ -76,6 +86,19 @@ function LoginPageContent() {
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Log In'}
               </Button>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or continue with
+                  </span>
+                </div>
+              </div>
+              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={loading}>
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Google'}
+              </Button>
               <div className="text-center text-sm">
                 Don't have an account?{' '}
                 <Link href="/signup" className="underline">
@@ -84,7 +107,7 @@ function LoginPageContent() {
               </div>
             </form>
           </CardContent>
-        </Card>
+        </card>
       </main>
     </div>
   );

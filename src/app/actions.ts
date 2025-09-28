@@ -2,6 +2,9 @@
 
 import {validateAndFilterUrls} from '@/ai/flows/validate-and-filter-urls';
 import {z} from 'zod';
+import { storage } from '@/lib/firebase-admin';
+import AWS from 'aws-sdk';
+import { google } from 'googleapis';
 
 const actionSchema = z.object({
   urls: z.array(z.string().min(1, {message: 'URL cannot be empty.'})).min(1),
@@ -42,4 +45,74 @@ export async function validateUrlsAction(
       errors: [`An error occurred during validation: ${errorMessage}`],
     };
   }
+}
+
+export async function uploadFilesAction(formData: FormData) {
+  const files = formData.getAll('files') as File[];
+  const urls: string[] = [];
+
+  for (const file of files) {
+    const bucket = storage.bucket();
+    const destination = `uploads/${file.name}`;
+    await bucket.upload(file.path, {
+      destination,
+    });
+    const uploadedFile = bucket.file(destination);
+    const [url] = await uploadedFile.getSignedUrl({
+      action: 'read',
+      expires: '03-09-2491',
+    });
+    urls.push(url);
+  }
+
+  return { urls };
+}
+
+export async function importFromS3Action(formData: FormData) {
+  const accessKeyId = formData.get('accessKeyId') as string;
+  const secretAccessKey = formData.get('secretAccessKey') as string;
+  const bucketName = formData.get('bucketName') as string;
+  const endpoint = formData.get('endpoint') as string;
+
+  const s3 = new AWS.S3({
+    accessKeyId,
+    secretAccessKey,
+    endpoint,
+    s3ForcePathStyle: true,
+    signatureVersion: 'v4',
+  });
+
+  const { Contents } = await s3.listObjectsV2({ Bucket: bucketName }).promise();
+
+  if (!Contents) {
+    return { urls: [] };
+  }
+
+  const urls = Contents.map((file) => {
+    return s3.getSignedUrl('getObject', {
+      Bucket: bucketName,
+      Key: file.Key,
+      Expires: 60 * 60 * 24 * 7, // 1 week
+    });
+  });
+
+  return { urls };
+}
+
+export async function listGoogleDriveFilesAction(accessToken: string) {
+  const oauth2Client = new google.auth.OAuth2();
+  oauth2Client.setCredentials({ access_token: accessToken });
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  const { data } = await drive.files.list({
+    q: "mimeType='video/mp4' or mimeType='video/quicktime' or mimeType='video/x-matroska' or mimeType='video/x-msvideo' or mimeType='video/x-ms-wmv'",
+    fields: 'files(id, name, webViewLink, webContentLink)',
+  });
+
+  if (!data.files) {
+    return { urls: [] };
+  }
+
+  const urls = data.files.map((file) => file.webContentLink as string);
+  return { urls };
 }

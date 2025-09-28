@@ -18,6 +18,7 @@ type VideoPlayerProps = {
   onToggleLike?: () => void;
   controls?: React.ReactNode;
   scrollControls?: React.ReactNode;
+  isInView?: boolean;
 };
 
 export function VideoPlayer({
@@ -26,6 +27,7 @@ export function VideoPlayer({
   onToggleLike = () => {},
   controls,
   scrollControls,
+  isInView,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -41,6 +43,16 @@ export function VideoPlayer({
   useEffect(() => {
     setIsLiked(initialIsLiked);
   }, [initialIsLiked]);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      if (isInView) {
+        videoRef.current.play();
+      } else {
+        videoRef.current.pause();
+      }
+    }
+  }, [isInView]);
   
   const attemptPlay = useCallback(() => {
     if (videoRef.current && videoRef.current.paused) {
@@ -278,5 +290,3 @@ export function VideoPlayer({
     </div>
   );
 }
-
-    

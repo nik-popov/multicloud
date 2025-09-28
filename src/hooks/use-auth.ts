@@ -1,5 +1,5 @@
 
-'use client';
+'use-client';
 
 import { useContext } from 'react';
 import { AuthContext } from '@/components/auth-provider';
@@ -11,6 +11,7 @@ export type AuthContextType = {
   signIn: (email: string, pass: string) => Promise<any>;
   signUp: (email: string, pass:string) => Promise<any>;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<any>;
 };
 
 export const useAuth = () => {
