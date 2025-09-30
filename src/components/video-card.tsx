@@ -145,13 +145,10 @@ export function VideoCard({
     cancelScheduledPause();
     const video = videoRef.current;
     if (video) {
-      video.pause();
       isPlayingRef.current = false;
-      if (!shouldAutoPlay || playOnHover) {
-        video.currentTime = 0;
-      }
+      video.pause();
     }
-  }, [cancelScheduledPause, playOnHover, shouldAutoPlay, src]);
+  }, [cancelScheduledPause, src]);
 
   const handlePointerEnter = useCallback(() => {
     if (!playOnHover) return;
@@ -191,7 +188,7 @@ export function VideoCard({
               loop
               muted
               playsInline
-              preload="metadata"
+              preload={playOnHover ? 'auto' : 'metadata'}
               onLoadedData={() => setIsReady(true)}
             />
             {!isReady && <Skeleton className="absolute inset-0 h-full w-full rounded-none" />}
