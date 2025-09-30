@@ -23,6 +23,7 @@ import {
   MediaRecord,
   saveLocalMedia,
   saveRemoteMedia,
+  assignMediaToUser,
 } from '@/lib/media-store';
 import { createPost } from '@/lib/post-store';
 
@@ -46,6 +47,13 @@ export function UrlProcessor() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSavingFiles, setIsSavingFiles] = useState(false);
   const [localMediaRecords, setLocalMediaRecords] = useState<MediaRecord[]>([]);
+  // Per-video metadata: { [id]: { title, description, subtitle, postFact } }
+  const [videoMeta, setVideoMeta] = useState<Record<string, {
+    title: string;
+    description: string;
+    subtitle: string;
+    postFact: string;
+  }>>({});
   const [postName, setPostName] = useState('');
   const [postTitle, setPostTitle] = useState('');
   const [postDescription, setPostDescription] = useState('');
@@ -78,6 +86,21 @@ export function UrlProcessor() {
           }
         });
         return merged;
+      });
+      // Initialize metadata for new videos
+      setVideoMeta(prev => {
+        const updated = { ...prev };
+        savedRecords.forEach(record => {
+          if (!updated[record.id]) {
+            updated[record.id] = {
+              title: record.fileName ?? '',
+              description: '',
+              subtitle: '',
+              postFact: '',
+            };
+          }
+        });
+        return updated;
       });
       toast({
         title: 'Videos saved',
@@ -122,6 +145,21 @@ export function UrlProcessor() {
       }
 
       const remoteRecords = await Promise.all(validHttpUrls.map(url => saveRemoteMedia(url, userId)));
+      // Initialize metadata for remote videos
+      setVideoMeta(prev => {
+        const updated = { ...prev };
+        remoteRecords.forEach(record => {
+          if (!updated[record.id]) {
+            updated[record.id] = {
+              title: record.title ?? '',
+              description: '',
+              subtitle: '',
+              postFact: '',
+            };
+          }
+        });
+        return updated;
+      });
       const allIds = dedupe([
         ...localMediaRecords.map(record => record.id),
         ...remoteRecords.map(record => record.id),
@@ -132,12 +170,21 @@ export function UrlProcessor() {
         return;
       }
 
+      await assignMediaToUser(allIds, userId);
+
+      // Collect per-video metadata for all videos
+      const mediaMeta = allIds.map(id => ({
+        id,
+        ...videoMeta[id],
+      }));
+
       await createPost({
         userId,
         name: postName,
         title: postTitle,
         description: postDescription,
         mediaIds: allIds,
+        mediaMeta, // Pass metadata for each video
       });
 
       toast({
@@ -148,6 +195,7 @@ export function UrlProcessor() {
       const mediaParam = encodeURIComponent(JSON.stringify(allIds));
       router.push(`/?mediaIds=${mediaParam}`);
       setLocalMediaRecords([]);
+      setVideoMeta({});
       setPostName('');
       setPostTitle('');
       setPostDescription('');
@@ -279,13 +327,69 @@ export function UrlProcessor() {
           {localMediaRecords.length > 0 && (
             <div className="rounded-lg border bg-muted/40 p-4 space-y-2">
               <p className="text-sm font-medium">Ready to discover ({localMediaRecords.length})</p>
-              <ul className="text-sm text-muted-foreground space-y-1 max-h-32 overflow-auto">
+              <div className="space-y-4 max-h-64 overflow-auto">
                 {localMediaRecords.map(record => (
-                  <li key={record.id} className="truncate">
-                    {record.fileName ?? record.title}
-                  </li>
+                  <div key={record.id} className="border-b pb-2 mb-2">
+                    <p className="font-semibold text-sm mb-1">{record.fileName ?? record.title}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <Input
+                        type="text"
+                        placeholder="Video Title"
+                        value={videoMeta[record.id]?.title ?? ''}
+                        onChange={e => setVideoMeta(meta => ({
+                          ...meta,
+                          [record.id]: {
+                            ...meta[record.id],
+                            title: e.target.value,
+                          },
+                        }))}
+                        disabled={isProcessing}
+                        className="text-xs"
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Subtitle"
+                        value={videoMeta[record.id]?.subtitle ?? ''}
+                        onChange={e => setVideoMeta(meta => ({
+                          ...meta,
+                          [record.id]: {
+                            ...meta[record.id],
+                            subtitle: e.target.value,
+                          },
+                        }))}
+                        disabled={isProcessing}
+                        className="text-xs"
+                      />
+                    </div>
+                    <Textarea
+                      placeholder="Video Description"
+                      value={videoMeta[record.id]?.description ?? ''}
+                      onChange={e => setVideoMeta(meta => ({
+                        ...meta,
+                        [record.id]: {
+                          ...meta[record.id],
+                          description: e.target.value,
+                        },
+                      }))}
+                      disabled={isProcessing}
+                      className="text-xs mt-1"
+                    />
+                    <Textarea
+                      placeholder="Post Fact (optional)"
+                      value={videoMeta[record.id]?.postFact ?? ''}
+                      onChange={e => setVideoMeta(meta => ({
+                        ...meta,
+                        [record.id]: {
+                          ...meta[record.id],
+                          postFact: e.target.value,
+                        },
+                      }))}
+                      disabled={isProcessing}
+                      className="text-xs mt-1"
+                    />
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
         </CardContent>

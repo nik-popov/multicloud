@@ -199,6 +199,26 @@ export async function getMediaBatch(ids: string[], userId?: string): Promise<Med
 	return results;
 }
 
+export async function assignMediaToUser(mediaIds: string[], userId: string): Promise<void> {
+	if (!mediaIds.length) return;
+	const normalizedUserId = userId?.trim() || 'guest';
+
+	await withStore('readwrite', async store => {
+		for (const id of mediaIds) {
+			const request = store.get(id);
+			const current = ensureUserId((await readRequest(request)) as MediaRecordWithBlob | undefined);
+			if (!current) continue;
+			if ((current.userId ?? 'guest') === normalizedUserId) continue;
+			const next: MediaRecordWithBlob = {
+				...current,
+				userId: normalizedUserId,
+				updatedAt: nowISO(),
+			};
+			store.put(next);
+		}
+	});
+}
+
 export async function listAllMedia(): Promise<MediaRecordWithBlob[]> {
 	return withStore('readonly', async store => {
 		const request = store.getAll();
