@@ -27,6 +27,7 @@ export function VideoCard({
   const isPlayingRef = useRef(false);
   const hasAttemptedHistoryAutoplayRef = useRef(false);
   const [isReady, setIsReady] = useState(false);
+  const pauseTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -41,6 +42,10 @@ export function VideoCard({
       const completelyOutOfView = bottom <= rootTop || top >= rootBottom || !entry.isIntersecting;
 
       if (!completelyOutOfView) {
+        if (pauseTimeoutRef.current) {
+          window.clearTimeout(pauseTimeoutRef.current);
+          pauseTimeoutRef.current = null;
+        }
         if (!isPlayingRef.current && video.paused) {
           isPlayingRef.current = true;
           requestAnimationFrame(() => {
@@ -54,9 +59,12 @@ export function VideoCard({
               });
           });
         }
-      } else if (isPlayingRef.current) {
-        isPlayingRef.current = false;
-        video.pause();
+      } else if (isPlayingRef.current && pauseTimeoutRef.current === null) {
+        pauseTimeoutRef.current = window.setTimeout(() => {
+          isPlayingRef.current = false;
+          video.pause();
+          pauseTimeoutRef.current = null;
+        }, 120);
       }
     };
 
@@ -75,6 +83,10 @@ export function VideoCard({
     observer.observe(container);
 
     return () => {
+      if (pauseTimeoutRef.current) {
+        window.clearTimeout(pauseTimeoutRef.current);
+        pauseTimeoutRef.current = null;
+      }
       observer.disconnect();
       isPlayingRef.current = false;
     };
@@ -86,6 +98,10 @@ export function VideoCard({
     if (!video || hasAttemptedHistoryAutoplayRef.current) return;
 
     requestAnimationFrame(() => {
+      if (pauseTimeoutRef.current) {
+        window.clearTimeout(pauseTimeoutRef.current);
+        pauseTimeoutRef.current = null;
+      }
       video
         .play()
         .then(() => {
