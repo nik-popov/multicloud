@@ -3,8 +3,9 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { ReactNode, useRef, useEffect } from 'react';
+import { ReactNode, useRef, useEffect, useState } from 'react';
 import { Heart } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type VideoCardProps = {
   src: string;
@@ -23,48 +24,78 @@ export function VideoCard({
 }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isPlayingRef = useRef(false);
+  const hasAttemptedHistoryAutoplayRef = useRef(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    const container = containerRef.current;
+    if (!video || !container) return;
+
+    const handleVisibilityChange = (entry: IntersectionObserverEntry) => {
+      const shouldPlay = entry.isIntersecting && entry.intersectionRatio >= 0.35;
+
+      if (shouldPlay && !isPlayingRef.current) {
+        isPlayingRef.current = true;
+        requestAnimationFrame(() => {
+          video
+            .play()
+            .then(() => {
+              hasAttemptedHistoryAutoplayRef.current = true;
+            })
+            .catch(() => {
+              isPlayingRef.current = false;
+            });
+        });
+      } else if (!shouldPlay && isPlayingRef.current) {
+        isPlayingRef.current = false;
+        video.pause();
+      }
+    };
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          video.play().catch(() => {
-            // Autoplay was prevented.
-          });
-        } else {
-          video.pause();
+        if (entry) {
+          handleVisibilityChange(entry);
         }
       },
       {
-        threshold: 0.8,
+        threshold: [0, 0.35, 0.75],
+        rootMargin: '0px 0px 25% 0px',
       }
     );
 
-    const currentRef = containerRef.current;
-    if (currentRef) {
-      observer.observe(currentRef);
-    }
-
-    // Special handling for history cards to attempt play on mount
-    if (isHistoryCard) {
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {
-            // Autoplay was prevented.
-          });
-        }
-    }
-
+    observer.observe(container);
 
     return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef);
-      }
+      observer.disconnect();
+      isPlayingRef.current = false;
     };
+  }, []);
+
+  useEffect(() => {
+    if (!isHistoryCard) return;
+    const video = videoRef.current;
+    if (!video || hasAttemptedHistoryAutoplayRef.current) return;
+
+    requestAnimationFrame(() => {
+      video
+        .play()
+        .then(() => {
+          hasAttemptedHistoryAutoplayRef.current = true;
+          isPlayingRef.current = true;
+        })
+        .catch(() => {
+          isPlayingRef.current = false;
+        });
+    });
   }, [isHistoryCard]);
+
+  useEffect(() => {
+    setIsReady(false);
+    hasAttemptedHistoryAutoplayRef.current = false;
+  }, [src]);
 
   return (
     <div
@@ -83,12 +114,17 @@ export function VideoCard({
             <video
               ref={videoRef}
               src={src}
-              className="w-full h-full object-cover"
+              className={cn(
+                'w-full h-full object-cover transition-opacity duration-300',
+                isReady ? 'opacity-100' : 'opacity-0'
+              )}
               loop
               muted
               playsInline
-              autoPlay
+              preload="metadata"
+              onLoadedData={() => setIsReady(true)}
             />
+            {!isReady && <Skeleton className="absolute inset-0 h-full w-full rounded-none" />}
             {isLiked && (
               <div className="absolute top-2 right-2 pointer-events-none">
                 <Heart className="h-6 w-6 text-red-500 fill-red-500" />

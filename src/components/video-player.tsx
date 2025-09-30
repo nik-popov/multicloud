@@ -8,6 +8,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Skeleton } from './ui/skeleton';
 
 type VideoPlayerProps = {
   src: string;
@@ -33,6 +34,9 @@ export function VideoPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isLiked, setIsLiked] = useState(initialIsLiked);
+  const [isReady, setIsReady] = useState(false);
+  const scrubbingRef = useRef(false);
+  const rafRef = useRef<number>();
 
 
   useEffect(() => {
@@ -77,29 +81,44 @@ export function VideoPlayer({
     }
   }, [isMuted]);
   
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const updateCurrentTime = useCallback((clientX: number, target: HTMLElement) => {
     if (!videoRef.current) return;
-    const { left, width } = e.currentTarget.getBoundingClientRect();
+    const { left, width } = target.getBoundingClientRect();
     if (width === 0) return;
-    const x = e.clientX - left;
-    const percentage = x / width;
+    const clampedX = Math.min(Math.max(clientX - left, 0), width);
+    const percentage = clampedX / width;
     const newTime = videoRef.current.duration * percentage;
-    
-    if (isFinite(newTime)) {
-        videoRef.current.currentTime = newTime;
+
+    if (!Number.isFinite(newTime)) return;
+
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
     }
+
+    rafRef.current = requestAnimationFrame(() => {
+      if (videoRef.current) {
+        videoRef.current.currentTime = newTime;
+      }
+    });
+  }, []);
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!videoRef.current) return;
+    scrubbingRef.current = true;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    updateCurrentTime(event.clientX, event.currentTarget);
   };
 
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!videoRef.current) return;
-    const { left, width } = e.currentTarget.getBoundingClientRect();
-    if (width === 0) return;
-    const x = e.touches[0].clientX - left;
-    const percentage = x / width;
-    const newTime = videoRef.current.duration * percentage;
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!scrubbingRef.current) return;
+    updateCurrentTime(event.clientX, event.currentTarget);
+  };
 
-    if (isFinite(newTime)) {
-      videoRef.current.currentTime = newTime;
+  const stopScrubbing = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!scrubbingRef.current) return;
+    scrubbingRef.current = false;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
     }
   };
 
@@ -118,8 +137,24 @@ export function VideoPlayer({
       }
       attemptPlay();
       setIsPlaying(!videoRef.current.paused);
+      setIsReady(true);
     }
   };
+
+  useEffect(() => {
+    setIsReady(false);
+    if (videoRef.current) {
+      scrubbingRef.current = false;
+    }
+  }, [src]);
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
   
   const handleToggleLike = () => {
     const newLikedState = !isLiked;
@@ -169,13 +204,19 @@ export function VideoPlayer({
       <CardContent className="p-0 h-full">
         <div
           className='relative w-full bg-black rounded-lg overflow-hidden h-full'
-          onMouseMove={handleMouseMove}
-          onTouchMove={handleTouchMove}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={stopScrubbing}
+          onPointerLeave={stopScrubbing}
+          onPointerCancel={stopScrubbing}
         >
           <video
             ref={videoRef}
             src={`${src}#t=0.1`}
-            className='w-full h-full object-contain'
+            className={cn(
+              'w-full h-full object-contain transition-opacity duration-300',
+              isReady ? 'opacity-100' : 'opacity-0'
+            )}
             loop
             muted={isMuted}
             playsInline
@@ -184,7 +225,9 @@ export function VideoPlayer({
             onPause={() => setIsPlaying(false)}
             autoPlay
             preload="metadata"
+            onLoadedData={() => setIsReady(true)}
           />
+          {!isReady && <Skeleton className="absolute inset-0 rounded-none" />}
           {!isPlaying && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="bg-black/50 rounded-full p-4">
@@ -199,7 +242,7 @@ export function VideoPlayer({
           )}
           <div className="absolute bottom-4 left-4 right-4 items-center justify-center text-white/70 text-xs font-semibold animate-pulse group-hover:opacity-0 transition-opacity hidden md:flex">
             <MousePointer className="h-4 w-4 mr-2" />
-            <span>Move mouse to scrub video</span>
+            <span>Click and drag to scrub video</span>
           </div>
         </div>
       </CardContent>

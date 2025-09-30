@@ -700,6 +700,8 @@ function HomePageContent() {
     }
 
     const recommendedItems = history.slice(0, 6);
+    const topGridItems = recommendedItems;
+    const remainingHistory = history.slice(topGridItems.length);
 
     const postsSection = (
       <section className="space-y-4">
@@ -743,6 +745,15 @@ function HomePageContent() {
 
       return (
         <div className="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 space-y-12">
+          {topGridItems.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="text-2xl font-bold">Recommended</h2>
+              {renderHistoryButtons(
+                topGridItems,
+                'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-4'
+              )}
+            </section>
+          )}
           <VideoGrid
             videos={mediaForGrid}
             favorites={favorites}
@@ -765,20 +776,10 @@ function HomePageContent() {
 
           {postsSection}
 
-          {recommendedItems.length > 0 && (
-            <section className="space-y-4">
-              <h2 className="text-2xl font-bold">Recommended</h2>
-              {renderHistoryButtons(
-                recommendedItems,
-                'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-4'
-              )}
-            </section>
-          )}
-
-          {history.length > 0 && (
+          {remainingHistory.length > 0 && (
             <section className="space-y-4">
               <h2 className="text-2xl font-bold">History</h2>
-              {renderHistoryButtons(history)}
+              {renderHistoryButtons(remainingHistory)}
             </section>
           )}
         </div>
@@ -798,6 +799,16 @@ function HomePageContent() {
           <Input placeholder="Search your history..." className="pl-10" />
         </div>
 
+        {topGridItems.length > 0 && (
+          <section className="space-y-4">
+            <h2 className="text-2xl font-bold text-center">Recommended</h2>
+            {renderHistoryButtons(
+              topGridItems,
+              'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4'
+            )}
+          </section>
+        )}
+
           {postsSection}
 
         {history.length === 0 && (
@@ -806,20 +817,10 @@ function HomePageContent() {
           </div>
         )}
 
-        {recommendedItems.length > 0 && (
-          <section className="space-y-4">
-            <h2 className="text-2xl font-bold text-center">Recommended</h2>
-            {renderHistoryButtons(
-              recommendedItems,
-              'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4'
-            )}
-          </section>
-        )}
-
-        {history.length > 0 && (
+        {remainingHistory.length > 0 && (
           <section className="space-y-4">
             <h2 className="text-2xl font-bold text-center">History</h2>
-            {renderHistoryButtons(history)}
+            {renderHistoryButtons(remainingHistory)}
           </section>
         )}
       </div>
