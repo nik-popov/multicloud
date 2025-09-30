@@ -23,7 +23,8 @@ export function PostCard({
 }: PostCardProps) {
   const actionButtonClass = 'flex items-center gap-2';
   const displayTitle = getPostDisplayLabel(post);
-  const displaySubtitle = post.name.trim() ? post.name : 'No name provided yet.';
+  const normalizedName = post.name.trim();
+  const displaySubtitle = normalizedName || 'No name provided yet.';
 
   return (
     <Card className="flex h-full flex-col justify-between bg-card/80 backdrop-blur">

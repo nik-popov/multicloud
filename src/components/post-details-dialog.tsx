@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PostRecord } from '@/lib/post-store';
+import { PostRecord, getPostDisplayLabel } from '@/lib/post-store';
 import { Badge } from '@/components/ui/badge';
 
 interface PostDetailsDialogProps {
@@ -17,7 +17,7 @@ export function PostDetailsDialog({ post, open, onOpenChange }: PostDetailsDialo
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{post?.title || post?.name || 'Post details'}</DialogTitle>
+          <DialogTitle>{post ? getPostDisplayLabel(post) : 'Post details'}</DialogTitle>
           {post && (
             <DialogDescription>
               Saved {new Date(post.createdAt).toLocaleString()} · {post.mediaIds.length} videos
