@@ -9,6 +9,7 @@ export type MediaRecord = {
 	description: string;
 	trimStart: number;
 	trimEnd: number | null;
+	userId: string;
 	originalUrl?: string;
 	fileName?: string;
 	mimeType?: string;
@@ -99,7 +100,15 @@ async function readRequest<T>(request: IDBRequest<T>): Promise<T> {
 	});
 }
 
-export async function saveLocalMedia(file: File): Promise<MediaRecord> {
+function ensureUserId(record: MediaRecordWithBlob | undefined): MediaRecordWithBlob | undefined {
+	if (!record) return record;
+	if (!record.userId) {
+		record.userId = 'guest';
+	}
+	return record;
+}
+
+export async function saveLocalMedia(file: File, userId = 'guest'): Promise<MediaRecord> {
 	const id = crypto.randomUUID();
 	const baseRecord: MediaRecordWithBlob = {
 		id,
@@ -108,6 +117,7 @@ export async function saveLocalMedia(file: File): Promise<MediaRecord> {
 		description: '',
 		trimStart: 0,
 		trimEnd: null,
+		userId,
 		fileName: file.name,
 		mimeType: file.type,
 		fileSize: file.size,
@@ -123,9 +133,9 @@ export async function saveLocalMedia(file: File): Promise<MediaRecord> {
 	return baseRecord;
 }
 
-export async function saveRemoteMedia(url: string): Promise<MediaRecord> {
+export async function saveRemoteMedia(url: string, userId = 'guest'): Promise<MediaRecord> {
 	const normalizedUrl = url.trim();
-	const existing = await findMediaByOriginalUrl(normalizedUrl);
+	const existing = await findMediaByOriginalUrl(normalizedUrl, userId);
 	if (existing) {
 		return existing;
 	}
@@ -137,6 +147,7 @@ export async function saveRemoteMedia(url: string): Promise<MediaRecord> {
 		description: '',
 		trimStart: 0,
 		trimEnd: null,
+		userId,
 		originalUrl: normalizedUrl,
 		createdAt: nowISO(),
 		updatedAt: nowISO(),
@@ -155,7 +166,7 @@ export async function updateMedia(
 ): Promise<MediaRecord | undefined> {
 	return withStore('readwrite', async store => {
 		const request = store.get(id);
-		const current = (await readRequest(request)) as MediaRecordWithBlob | undefined;
+		const current = ensureUserId((await readRequest(request)) as MediaRecordWithBlob | undefined);
 		if (!current) return undefined;
 
 		const next: MediaRecordWithBlob = {
@@ -172,17 +183,18 @@ export async function updateMedia(
 export async function getMedia(id: string): Promise<MediaRecordWithBlob | undefined> {
 	return withStore('readonly', async store => {
 		const request = store.get(id);
-		return (await readRequest(request)) as MediaRecordWithBlob | undefined;
+		return ensureUserId((await readRequest(request)) as MediaRecordWithBlob | undefined);
 	});
 }
 
-export async function getMediaBatch(ids: string[]): Promise<MediaRecordWithBlob[]> {
+export async function getMediaBatch(ids: string[], userId?: string): Promise<MediaRecordWithBlob[]> {
 	const results: MediaRecordWithBlob[] = [];
 	for (const id of ids) {
 		const record = await getMedia(id);
-		if (record) {
-			results.push(record);
-		}
+		if (!record) continue;
+		const recordUserId = record.userId ?? 'guest';
+		if (userId && recordUserId !== userId) continue;
+		results.push(record);
 	}
 	return results;
 }
@@ -190,7 +202,8 @@ export async function getMediaBatch(ids: string[]): Promise<MediaRecordWithBlob[
 export async function listAllMedia(): Promise<MediaRecordWithBlob[]> {
 	return withStore('readonly', async store => {
 		const request = store.getAll();
-		return (await readRequest(request)) as MediaRecordWithBlob[];
+		const records = (await readRequest(request)) as MediaRecordWithBlob[];
+		return records.map(record => ensureUserId(record)!).filter(Boolean);
 	});
 }
 
@@ -213,12 +226,12 @@ export function revokeMediaSource(url: string) {
 	}
 }
 
-async function findMediaByOriginalUrl(url: string): Promise<MediaRecord | undefined> {
+async function findMediaByOriginalUrl(url: string, userId: string): Promise<MediaRecord | undefined> {
 	return withStore('readonly', async store => {
 		const index = store.index('originalUrl');
-		const request = index.get(url);
-		const result = (await readRequest(request)) as MediaRecordWithBlob | undefined;
-		return result;
+		const request = index.getAll(url);
+		const results = (await readRequest(request)) as MediaRecordWithBlob[];
+		const match = results.find(record => (ensureUserId(record)?.userId ?? 'guest') === userId);
+		return match;
 	});
 }
-import { openDB, DBSchema, IDBPDatabase } from 'idb';

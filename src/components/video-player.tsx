@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Heart, MousePointer, Fullscreen, Play, Pause, Settings, Volume2, VolumeX } from 'lucide-react';
+import { Heart, MousePointer, Fullscreen, Play, Settings, Volume2, VolumeX } from 'lucide-react';
 import { Button } from './ui/button';
 import { cn } from '@/lib/utils';
 import { useRef, useState, useEffect, useCallback } from 'react';

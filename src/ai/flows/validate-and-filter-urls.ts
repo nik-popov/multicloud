@@ -44,7 +44,7 @@ export async function validateAndFilterUrls(
         const contentType = response.headers.get('Content-Type');
         const isValid = response.ok && contentType?.startsWith('video/') || false;
         return { originalUrl: url, isValid };
-      } catch (error) {
+      } catch {
         return { originalUrl: url, isValid: false };
       }
     })
@@ -68,7 +68,7 @@ const validateUrlsPrompt = ai.definePrompt({
   {{/each}}`,
 });
 
-const validateAndFilterUrlsFlow = ai.defineFlow(
+export const validateAndFilterUrlsFlow = ai.defineFlow(
   {
     name: 'validateAndFilterUrlsFlow',
     inputSchema: ValidateAndFilterUrlsInputSchema,

@@ -1,40 +1,17 @@
-
 'use client';
-import {cn} from '@/lib/utils';
-import {VideoPlayer} from './video-player';
-import {ArrowLeft, ChevronDown, ChevronUp} from 'lucide-react';
-import {useMemo, useEffect, useRef, useCallback, useState} from 'react';
-import {Button} from './ui/button';
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+
+import { cn } from '@/lib/utils';
+import { ResolvedMediaItem } from '@/types/media';
+import { VideoPlayer } from './video-player';
 import { VideoCard } from './video-card';
+import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Label } from './ui/label';
-import { Switch } from './ui/switch';
 import { Slider } from './ui/slider';
-
-type VideoGridProps = {
-  urls: string[];
-  selectedUrl?: string | null;
-  onSelectVideo?: (url: string) => void;
-  gridSize?: number;
-  setGridSize?: (size: number) => void;
-  history?: any[];
-  loadBatch?: (urls: string[]) => void;
-  onBackToGrid?: () => void;
-  favorites: string[];
-  onToggleFavorite: (url: string) => void;
-  onFocusViewChange?: (isFocusView: boolean) => void;
-  viewMode?: 'main' | 'favorites';
-  isAutoScrolling: boolean;
-  setIsAutoScrolling: (isAutoScrolling: boolean) => void;
-  scrollSpeed: number;
-  setScrollSpeed: (speed: number) => void;
-};
-
-const safeId = (id: string) => {
-  return id.replace(/[^a-zA-Z0-9-_]/g, (match) => {
-      return `_${match.charCodeAt(0).toString(16)}`;
-  });
-};
+import { Switch } from './ui/switch';
 
 const gridColsMap: Record<number, string> = {
   1: 'grid-cols-1',
@@ -45,12 +22,39 @@ const gridColsMap: Record<number, string> = {
   6: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6',
 };
 
-const getGridClassName = (gridSize: number) => gridColsMap[gridSize] ?? gridColsMap[3];
+const safeId = (id: string) => id.replace(/[^a-zA-Z0-9-_]/g, match => `_${match.charCodeAt(0).toString(16)}`);
 
+export type HistoryEntry = {
+  timestamp: string;
+  mediaIds: string[];
+};
+
+type VideoGridProps = {
+  videos: ResolvedMediaItem[];
+  selectedMediaId?: string | null;
+  onSelectVideo?: (mediaId: string) => void;
+  gridSize?: number;
+  setGridSize?: (size: number) => void;
+  history?: HistoryEntry[];
+  loadBatch?: (mediaIds: string[]) => void;
+  onBackToGrid?: () => void;
+  favorites: string[];
+  onToggleFavorite: (mediaId: string) => void;
+  onFocusViewChange?: (isFocusView: boolean) => void;
+  viewMode?: 'main' | 'favorites';
+  isAutoScrolling: boolean;
+  setIsAutoScrolling: (isAutoScrolling: boolean) => void;
+  scrollSpeed: number;
+  setScrollSpeed: (speed: number) => void;
+  onSaveMedia?: (
+    mediaId: string,
+    updates: { title?: string; description?: string; trimStart?: number; trimEnd?: number | null }
+  ) => void | Promise<void>;
+};
 
 export function VideoGrid({
-  urls,
-  selectedUrl,
+  videos,
+  selectedMediaId,
   onSelectVideo = () => {},
   gridSize = 4,
   setGridSize = () => {},
@@ -71,56 +75,54 @@ export function VideoGrid({
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const view = selectedUrl ? 'focus' : 'grid';
+  const view = selectedMediaId ? 'focus' : 'grid';
 
   useEffect(() => {
     onFocusViewChange?.(view === 'focus');
   }, [view, onFocusViewChange]);
 
-  const handleSelectVideo = (url: string) => {
-    onSelectVideo(url);
-  };
+  const videoIds = useMemo(() => videos.map(video => video.id), [videos]);
 
-  const handleBackToGrid = () => {
-    onBackToGrid();
-  };
-      
-  const loadedTimestamps = useMemo(() => {
-    const timestamps = new Set<string>();
-    let currentUrlsIndex = 0;
+  const pendingHistory = useMemo(() => {
+    if (!history.length || !videoIds.length) return history;
+    const consumed = new Set<string>();
+    let cursor = 0;
+
     history.forEach(batch => {
-      const batchUrls = batch.urls;
-      if (currentUrlsIndex + batchUrls.length <= urls.length) {
-        const sliceOfUrls = urls.slice(currentUrlsIndex, currentUrlsIndex + batchUrls.length);
-        if (JSON.stringify(sliceOfUrls) === JSON.stringify(batchUrls)) {
-          timestamps.add(batch.timestamp);
-          currentUrlsIndex += batchUrls.length;
-        }
+      const ids = batch.mediaIds;
+      if (!ids.length) return;
+      const slice = videoIds.slice(cursor, cursor + ids.length);
+      if (slice.length === ids.length && slice.every((id, index) => id === ids[index])) {
+        consumed.add(batch.timestamp);
+        cursor += ids.length;
       }
     });
-    return timestamps;
-  }, [urls, history]);
 
+    return history.filter(batch => !consumed.has(batch.timestamp));
+  }, [history, videoIds]);
 
-  const otherHistory = history.filter(
-    batch => !loadedTimestamps.has(batch.timestamp)
+  const handleSelectVideo = useCallback(
+    (mediaId: string) => {
+      onSelectVideo(mediaId);
+    },
+    [onSelectVideo]
   );
-  
+
   const handleLoadNextBatch = useCallback(() => {
-    if (otherHistory.length > 0) {
-      loadBatch(otherHistory[0].urls);
+    if (pendingHistory.length > 0) {
+      const next = pendingHistory[0]?.mediaIds ?? [];
+      if (next.length) {
+        loadBatch(next);
+      }
     }
-  }, [otherHistory, loadBatch]);
-  
+  }, [pendingHistory, loadBatch]);
+
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && view === 'grid') {
-          handleLoadNextBatch();
-        }
-      },
-      { threshold: 1.0 }
-    );
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && view === 'grid') {
+        handleLoadNextBatch();
+      }
+    });
 
     const loader = loaderRef.current;
     if (loader) {
@@ -134,161 +136,139 @@ export function VideoGrid({
     };
   }, [handleLoadNextBatch, view]);
 
-  const orderedUrls = useMemo(() => {
-    if (!selectedUrl || view === 'grid') return urls;
-    const currentUrls = viewMode === 'favorites' ? favorites : urls;
-    const newUrls = [...currentUrls];
-    const index = newUrls.indexOf(selectedUrl);
+  const orderedVideos = useMemo(() => {
+    if (!selectedMediaId || view === 'grid') return videos;
+    const reordered = [...videos];
+    const index = reordered.findIndex(video => video.id === selectedMediaId);
     if (index > -1) {
-      const [item] = newUrls.splice(index, 1);
-      newUrls.unshift(item);
+      const [item] = reordered.splice(index, 1);
+      reordered.unshift(item);
     }
-    return newUrls;
-  }, [selectedUrl, urls, view, viewMode, favorites]);
-
+    return reordered;
+  }, [selectedMediaId, videos, view]);
 
   useEffect(() => {
-    if (view === 'focus' && selectedUrl) {
-      const targetElement = document.getElementById(`video-wrapper-${safeId(selectedUrl)}`);
-      if (targetElement) {
-        targetElement.scrollIntoView({ behavior: 'auto', block: 'start' });
-      }
+    if (view === 'focus' && selectedMediaId) {
+      const targetElement = document.getElementById(`video-wrapper-${safeId(selectedMediaId)}`);
+      targetElement?.scrollIntoView({ behavior: 'auto', block: 'start' });
     }
-  }, [view, selectedUrl, orderedUrls]);
+  }, [view, selectedMediaId, orderedVideos]);
 
-    useEffect(() => {
+  useEffect(() => {
     const scrollAmount = scrollSpeed / 5;
     if (isAutoScrolling) {
       if (view === 'grid' && scrollContainerRef.current) {
         scrollIntervalRef.current = setInterval(() => {
-          window.scrollBy({top: scrollAmount, behavior: 'smooth'});
+          window.scrollBy({ top: scrollAmount, behavior: 'smooth' });
         }, 50);
       } else if (view === 'focus' && scrollContainerRef.current) {
         scrollIntervalRef.current = setInterval(() => {
-          scrollContainerRef.current?.scrollBy({top: scrollContainerRef.current.clientHeight, behavior: 'smooth'});
-        }, 3000 / (scrollSpeed / 5)); // Adjust timing based on speed
+          scrollContainerRef.current?.scrollBy({
+            top: scrollContainerRef.current.clientHeight,
+            behavior: 'smooth',
+          });
+        }, Math.max(300, 3000 / Math.max(scrollSpeed / 5, 0.5)));
       }
-    } else {
-      if (scrollIntervalRef.current) {
-        clearInterval(scrollIntervalRef.current);
-      }
+    } else if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
     }
+
     return () => {
       if (scrollIntervalRef.current) {
         clearInterval(scrollIntervalRef.current);
       }
     };
-  }, [isAutoScrolling, view, scrollSpeed, scrollContainerRef]);
+  }, [isAutoScrolling, view, scrollSpeed]);
 
-  const handleScrollDown = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        top: scrollContainerRef.current.clientHeight,
-        behavior: 'smooth',
-      });
-    }
-  };
-  
-  const handleScrollUp = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({
-        top: -scrollContainerRef.current.clientHeight,
-        behavior: 'smooth',
-      });
-    }
-  };
+  const handleScrollDown = useCallback(() => {
+    scrollContainerRef.current?.scrollBy({
+      top: scrollContainerRef.current.clientHeight,
+      behavior: 'smooth',
+    });
+  }, []);
+
+  const handleScrollUp = useCallback(() => {
+    scrollContainerRef.current?.scrollBy({
+      top: -scrollContainerRef.current.clientHeight,
+      behavior: 'smooth',
+    });
+  }, []);
 
   const Controls = () => (
-     <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between w-full">
-            <Label
-              htmlFor="auto-scroll"
-              className="text-sm font-medium"
-            >
-              Auto-Scroll
-            </Label>
-            <Switch
-              id="auto-scroll"
-              checked={isAutoScrolling}
-              onCheckedChange={setIsAutoScrolling}
-              aria-label="Toggle auto-scroll"
-            />
-          </div>
-        </div>
-
-        {view === 'grid' && (
-          <div className="p-0 space-y-2">
-            <div className="flex justify-between items-center gap-4">
-              <Label htmlFor="grid-size" className="flex-shrink-0">
-                Grid Size
-              </Label>
-              <span className="text-sm font-medium">{gridSize}</span>
-            </div>
-            <Slider
-              id="grid-size"
-              min={1}
-              max={6}
-              step={1}
-              value={[gridSize]}
-              onValueChange={value => setGridSize(value[0])}
-            />
-          </div>
-        )}
-        <div className="p-0 space-y-2">
-          <div className="flex justify-between items-center gap-4">
-            <Label
-              htmlFor="scroll-speed"
-              className="flex-shrink-0"
-            >
-              Scroll Speed
-            </Label>
-            <span className="text-sm font-medium">{scrollSpeed}</span>
-          </div>
-          <Slider
-            id="scroll-speed"
-            min={1}
-            max={10}
-            step={1}
-            value={[scrollSpeed]}
-            onValueChange={value => setScrollSpeed(value[0])}
-          />
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between w-full">
+          <Label htmlFor="auto-scroll" className="text-sm font-medium">
+            Auto-Scroll
+          </Label>
+          <Switch id="auto-scroll" checked={isAutoScrolling} onCheckedChange={setIsAutoScrolling} />
         </div>
       </div>
+
+      {view === 'grid' && (
+        <div className="p-0 space-y-2">
+          <div className="flex justify-between items-center gap-4">
+            <Label htmlFor="grid-size" className="flex-shrink-0">
+              Grid Size
+            </Label>
+            <span className="text-sm font-medium">{gridSize}</span>
+          </div>
+          <Slider
+            id="grid-size"
+            min={1}
+            max={6}
+            step={1}
+            value={[gridSize]}
+            onValueChange={value => setGridSize(value[0])}
+          />
+        </div>
+      )}
+      <div className="p-0 space-y-2">
+        <div className="flex justify-between items-center gap-4">
+          <Label htmlFor="scroll-speed" className="flex-shrink-0">
+            Scroll Speed
+          </Label>
+          <span className="text-sm font-medium">{scrollSpeed}</span>
+        </div>
+        <Slider
+          id="scroll-speed"
+          min={1}
+          max={10}
+          step={1}
+          value={[scrollSpeed]}
+          onValueChange={value => setScrollSpeed(value[0])}
+        />
+      </div>
+    </div>
   );
 
   useEffect(() => {
-    if (view === 'focus') {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              const index = orderedUrls.findIndex(
-                (url) => `video-wrapper-${safeId(url)}` === entry.target.id
-              );
-              if (index !== -1) {
-                setCurrentIndex(index);
-              }
-            }
-          });
-        },
-        { threshold: 0.5 }
-      );
-  
-      const videoElements = document.querySelectorAll('[data-video-wrapper]');
-      videoElements.forEach((el) => observer.observe(el));
-  
-      return () => {
-        videoElements.forEach((el) => observer.unobserve(el));
-      };
-    }
-  }, [orderedUrls, view]);
-  
+    if (view !== 'focus') return undefined;
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const index = orderedVideos.findIndex(video => `video-wrapper-${safeId(video.id)}` === entry.target.id);
+          if (index !== -1) {
+            setCurrentIndex(index);
+          }
+        }
+      });
+    }, { threshold: 0.5 });
+
+    const videoElements = document.querySelectorAll('[data-video-wrapper]');
+    videoElements.forEach(el => observer.observe(el));
+
+    return () => {
+      videoElements.forEach(el => observer.unobserve(el));
+    };
+  }, [orderedVideos, view]);
+
   useEffect(() => {
-    if (currentIndex >= orderedUrls.length && orderedUrls.length > 0) {
-      setCurrentIndex(orderedUrls.length - 1);
+    if (currentIndex >= orderedVideos.length && orderedVideos.length > 0) {
+      setCurrentIndex(orderedVideos.length - 1);
     }
-  }, [orderedUrls, currentIndex]);
+  }, [orderedVideos, currentIndex]);
 
   if (view === 'focus') {
     return (
@@ -297,7 +277,7 @@ export function VideoGrid({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleBackToGrid}
+            onClick={onBackToGrid}
             aria-label="Back to grid"
             className="bg-black/30 text-white hover:bg-black/50 hover:text-white backdrop-blur-sm rounded-full w-12 h-12"
           >
@@ -309,24 +289,22 @@ export function VideoGrid({
           data-focus-view-container
           className="flex flex-col items-center snap-y snap-mandatory h-full overflow-y-scroll"
         >
-          {orderedUrls.map((url, index) => (
+          {orderedVideos.map((video, index) => (
             <div
-              key={url}
-              id={`video-wrapper-${safeId(url)}`}
+              key={video.id}
+              id={`video-wrapper-${safeId(video.id)}`}
               data-video-wrapper
               className="snap-start h-full w-full flex items-center justify-center"
             >
               <VideoPlayer
-                src={url}
-                isLiked={favorites.includes(url)}
-                onToggleLike={() => onToggleFavorite(url)}
+                src={video.src}
+                isLiked={favorites.includes(video.id)}
+                onToggleLike={() => onToggleFavorite(video.id)}
                 isInView={index === currentIndex}
-                controls={
-                  <Controls />
-                }
+                controls={<Controls />}
                 scrollControls={
                   <div className="flex flex-col items-center gap-4">
-                    {orderedUrls.indexOf(url) > 0 && (
+                    {index > 0 && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -336,7 +314,7 @@ export function VideoGrid({
                         <ChevronUp className="h-6 w-6" />
                       </Button>
                     )}
-                     {orderedUrls.indexOf(url) < orderedUrls.length - 1 && (
+                    {index < orderedVideos.length - 1 && (
                       <Button
                         variant="ghost"
                         size="icon"
@@ -360,7 +338,7 @@ export function VideoGrid({
     <div>
       {viewMode === 'favorites' ? (
         <h2 className="text-2xl font-bold text-center mb-8">My Favorites</h2>
-      ) : null }
+      ) : null}
       <div className="lg:hidden mb-6">
         <Card className="p-4 bg-card/80 backdrop-blur-sm">
           <CardContent className="p-0">
@@ -368,22 +346,22 @@ export function VideoGrid({
           </CardContent>
         </Card>
       </div>
-  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-8 items-start">
         <div
           ref={scrollContainerRef}
-          className={cn('grid gap-4 md:gap-6', getGridClassName(gridSize))}
+          className={cn('grid gap-4 md:gap-6', gridColsMap[gridSize] ?? gridColsMap[3])}
         >
-          {urls.map(url => (
-            <div key={url} id={`video-wrapper-${safeId(url)}`} className="w-full">
+          {videos.map(video => (
+            <div key={video.id} id={`video-wrapper-${safeId(video.id)}`} className="w-full">
               <VideoCard
-                src={url}
-                onClick={() => handleSelectVideo(url)}
-                isLiked={favorites.includes(url)}
+                src={video.src}
+                onClick={() => handleSelectVideo(video.id)}
+                isLiked={favorites.includes(video.id)}
               />
             </div>
           ))}
         </div>
-  <div className="hidden lg:block">
+        <div className="hidden lg:block">
           <Card className="p-4 bg-card/80 backdrop-blur-sm sticky top-4">
             <CardContent className="p-0">
               <Controls />
@@ -391,9 +369,7 @@ export function VideoGrid({
           </Card>
         </div>
       </div>
-      {otherHistory.length > 0 && view === 'grid' && (
-        <div ref={loaderRef} className="h-10" />
-      )}
+      {pendingHistory.length > 0 && view === 'grid' && <div ref={loaderRef} className="h-10" />}
     </div>
   );
 }

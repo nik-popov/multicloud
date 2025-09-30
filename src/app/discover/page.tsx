@@ -19,6 +19,11 @@ function DiscoverPageContent() {
           </Link>
         </div>
         <div className="flex items-center gap-2">
+            {user && (
+              <Button variant="outline" asChild>
+                <Link href="/account">My Posts</Link>
+              </Button>
+            )}
             {loading ? (
               <Button variant="ghost" size="icon" disabled>
                 <Loader2 className="h-4 w-4 animate-spin" />
