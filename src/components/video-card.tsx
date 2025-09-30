@@ -34,21 +34,27 @@ export function VideoCard({
     if (!video || !container) return;
 
     const handleVisibilityChange = (entry: IntersectionObserverEntry) => {
-      const shouldPlay = entry.isIntersecting && entry.intersectionRatio >= 0.35;
+      const rootTop = entry.rootBounds?.top ?? 0;
+      const rootHeight = entry.rootBounds?.height ?? window.innerHeight;
+      const rootBottom = rootTop + rootHeight;
+      const { top, bottom } = entry.boundingClientRect;
+      const completelyOutOfView = bottom <= rootTop || top >= rootBottom || !entry.isIntersecting;
 
-      if (shouldPlay && !isPlayingRef.current) {
-        isPlayingRef.current = true;
-        requestAnimationFrame(() => {
-          video
-            .play()
-            .then(() => {
-              hasAttemptedHistoryAutoplayRef.current = true;
-            })
-            .catch(() => {
-              isPlayingRef.current = false;
-            });
-        });
-      } else if (!shouldPlay && isPlayingRef.current) {
+      if (!completelyOutOfView) {
+        if (!isPlayingRef.current && video.paused) {
+          isPlayingRef.current = true;
+          requestAnimationFrame(() => {
+            video
+              .play()
+              .then(() => {
+                hasAttemptedHistoryAutoplayRef.current = true;
+              })
+              .catch(() => {
+                isPlayingRef.current = false;
+              });
+          });
+        }
+      } else if (isPlayingRef.current) {
         isPlayingRef.current = false;
         video.pause();
       }
@@ -61,8 +67,8 @@ export function VideoCard({
         }
       },
       {
-        threshold: [0, 0.35, 0.75],
-        rootMargin: '0px 0px 25% 0px',
+        threshold: [0, 0.2, 0.75],
+        rootMargin: '0px 0px 10% 0px',
       }
     );
 
