@@ -1,17 +1,14 @@
-
-
 'use client';
 
 import { UrlProcessor } from '@/components/url-processor';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 function DiscoverPageContent() {
-  const isMobile = useIsMobile();
-  const {user, loading} = useAuth();
+  const { user, loading, logout } = useAuth();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -22,25 +19,23 @@ function DiscoverPageContent() {
           </Link>
         </div>
         <div className="flex items-center gap-2">
-             {user && !loading ? (
-              <>
-                <Button variant="outline" asChild>
-                    <Link href="/account">Account</Link>
+            {loading ? (
+              <Button variant="ghost" size="icon" disabled>
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </Button>
+            ) : user ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline text-sm text-muted-foreground">
+                  {user.email}
+                </span>
+                <Button variant="ghost" onClick={logout}>
+                  Log Out
                 </Button>
-              </>
+              </div>
             ) : (
-              <>
-                {!loading && (
-                  <>
-                    <Button variant="ghost" asChild>
-                        <Link href="/login">Log In</Link>
-                    </Button>
-                    <Button asChild>
-                        <Link href="/signup">Sign Up</Link>
-                    </Button>
-                  </>
-                )}
-              </>
+              <Button variant="ghost" asChild>
+                  <Link href="/login">Log In</Link>
+              </Button>
             )}
         </div>
       </header>

@@ -1,82 +1,78 @@
-
 'use client';
 
-import { createContext, useEffect, useState, ReactNode } from 'react';
-import {
-  getAuth,
-  onAuthStateChanged,
-  User,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  signInWithPopup,
-  GoogleAuthProvider,
-} from 'firebase/auth';
-import { app } from '@/lib/firebase';
-import type { AuthContextType } from '@/hooks/use-auth';
-import { SessionProvider } from 'next-auth/react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-export const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  signIn: async () => {},
-  signUp: async () => {},
-  signOut: async () => {},
-  signInWithGoogle: async () => {},
-});
+type AuthUser = {
+  email: string;
+};
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+type AuthContextValue = {
+  user: AuthUser | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+};
+
+const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_EMAIL ?? 'demo@example.com';
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? 'password123';
+const STORAGE_KEY = 'bulkshorts_user';
+
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const auth = getAuth(app);
 
-  const signOut = () => {
-    return firebaseSignOut(auth);
-  };
-  
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
-      auth, 
-      (user) => {
-        setUser(user);
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Authentication error, signing out:", error);
-        setUser(null);
-        setLoading(false);
-        signOut();
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored) as AuthUser;
+        if (parsed?.email) {
+          setUser(parsed);
+        }
       }
-    );
-    return () => unsubscribe();
-  }, [auth]);
+    } catch (error) {
+      console.warn('Failed to read auth state from storage', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const signIn = (email: string, pass: string) => {
-    return signInWithEmailAndPassword(auth, email, pass);
+  const login = async (email: string, password: string) => {
+    await new Promise(resolve => setTimeout(resolve, 250));
+
+    if (email.trim().toLowerCase() !== DEMO_EMAIL.toLowerCase() || password !== DEMO_PASSWORD) {
+      throw new Error('Invalid email or password');
+    }
+
+    const authUser: AuthUser = { email };
+    setUser(authUser);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
   };
 
-  const signUp = (email: string, pass: string) => {
-    return createUserWithEmailAndPassword(auth, email, pass);
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem(STORAGE_KEY);
   };
 
-  const signInWithGoogle = () => {
-    const provider = new GoogleAuthProvider();
-    provider.addScope('https://www.googleapis.com/auth/drive.readonly');
-    return signInWithPopup(auth, provider);
-  };
-
-  const value = {
-    user,
-    loading,
-    signIn,
-    signUp,
-    signOut,
-    signInWithGoogle,
-  };
-
-  return (
-    <SessionProvider>
-      <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-    </SessionProvider>
+  const value = useMemo<AuthContextValue>(
+    () => ({ user, loading, login, logout }),
+    [user, loading]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
+export const demoCredentials = {
+  email: DEMO_EMAIL,
+  password: DEMO_PASSWORD,
+};

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,8 +8,6 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { Slider } from './ui/slider';
 import { Label } from './ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { useAuth } from '@/hooks/use-auth';
-import { useRouter } from 'next/navigation';
 
 type VideoPlayerProps = {
   src: string;
@@ -36,8 +33,6 @@ export function VideoPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [isLiked, setIsLiked] = useState(initialIsLiked);
-  const { user } = useAuth();
-  const router = useRouter();
 
 
   useEffect(() => {
@@ -127,10 +122,6 @@ export function VideoPlayer({
   };
   
   const handleToggleLike = () => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
     onToggleLike();

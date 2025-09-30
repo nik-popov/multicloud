@@ -36,14 +36,16 @@ const safeId = (id: string) => {
   });
 };
 
-const gridColsMap: {[key: number]: string} = {
-  1: 'lg:grid-cols-1',
-  2: 'lg:grid-cols-2',
-  3: 'lg:grid-cols-3',
-  4: 'lg:grid-cols-4',
-  5: 'lg:grid-cols-5',
-  6: 'lg:grid-cols-6',
+const gridColsMap: Record<number, string> = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 sm:grid-cols-2',
+  3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4',
+  5: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5',
+  6: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6',
 };
+
+const getGridClassName = (gridSize: number) => gridColsMap[gridSize] ?? gridColsMap[3];
 
 
 export function VideoGrid({
@@ -359,17 +361,17 @@ export function VideoGrid({
       {viewMode === 'favorites' ? (
         <h2 className="text-2xl font-bold text-center mb-8">My Favorites</h2>
       ) : null }
-      <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-8">
-          <div className="sticky top-4 h-min hidden md:block">
-            <Card className="p-4 bg-card/80 backdrop-blur-sm">
-              <CardContent className="p-0">
-                <Controls />
-              </CardContent>
-            </Card>
-          </div>
+      <div className="lg:hidden mb-6">
+        <Card className="p-4 bg-card/80 backdrop-blur-sm">
+          <CardContent className="p-0">
+            <Controls />
+          </CardContent>
+        </Card>
+      </div>
+  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_260px] gap-8 items-start">
         <div
           ref={scrollContainerRef}
-          className={cn("grid gap-4 md:gap-6", `grid-cols-2`, gridColsMap[gridSize])}
+          className={cn('grid gap-4 md:gap-6', getGridClassName(gridSize))}
         >
           {urls.map(url => (
             <div key={url} id={`video-wrapper-${safeId(url)}`} className="w-full">
@@ -380,6 +382,13 @@ export function VideoGrid({
               />
             </div>
           ))}
+        </div>
+  <div className="hidden lg:block">
+          <Card className="p-4 bg-card/80 backdrop-blur-sm sticky top-4">
+            <CardContent className="p-0">
+              <Controls />
+            </CardContent>
+          </Card>
         </div>
       </div>
       {otherHistory.length > 0 && view === 'grid' && (

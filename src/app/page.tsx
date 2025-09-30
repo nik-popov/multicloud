@@ -1,4 +1,3 @@
-
 'use client';
 
 import {Button} from '@/components/ui/button';
@@ -8,12 +7,10 @@ import Link from 'next/link';
 import {useEffect, useState, Suspense, useCallback} from 'react';
 import {useRouter, useSearchParams} from 'next/navigation';
 
-import {useIsMobile} from '@/hooks/use-mobile';
 import {Input} from '@/components/ui/input';
 import {VideoCard} from '@/components/video-card';
 import {Loader2} from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { getFavorites, saveFavorites, migrateFavorites, getHistory, saveHistory, migrateHistory } from '@/lib/firestore';
 
 type HistoryItem = {
   timestamp: string;
@@ -29,16 +26,14 @@ function HomePageContent() {
   const [selectedUrlForFocus, setSelectedUrlForFocus] = useState<string | null>(
     null
   );
-  const isMobile = useIsMobile();
   const [gridSize, setGridSize] = useState(3);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(5);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, loading: authLoading } = useAuth();
-
+  const { user, loading: authLoading, logout } = useAuth();
 
   const handleUrlParam = useCallback((urlsParam: string | null) => {
     if (urlsParam) {
@@ -58,11 +53,10 @@ function HomePageContent() {
               return prevHistory;
             }
             const updatedHistory = [newBatch, ...prevHistory].slice(0, 50);
-            if (user) {
-              saveHistory(user.uid, updatedHistory);
-            } else {
-              localStorage.setItem('bulkshorts_history', JSON.stringify(updatedHistory));
-            }
+            const persistentHistory = updatedHistory.filter(
+              batch => !batch.urls.some(url => url.startsWith('blob:'))
+            );
+            localStorage.setItem('bulkshorts_history', JSON.stringify(persistentHistory));
             return updatedHistory;
           });
         }
@@ -73,7 +67,7 @@ function HomePageContent() {
         router.replace('/', undefined);
       }
     }
-  }, [user, router]);
+  }, [router]);
 
 
   // Effect for handling URL parameters
@@ -86,43 +80,60 @@ function HomePageContent() {
 
   // Effect for loading initial data from storage
   useEffect(() => {
-    async function loadInitialData() {
-        if (user) {
-            await migrateFavorites(user.uid);
-            await migrateHistory(user.uid);
-            const [dbFavorites, dbHistory] = await Promise.all([
-                getFavorites(user.uid),
-                getHistory(user.uid)
-            ]);
-            setFavoritesState(dbFavorites);
-            setHistory(dbHistory);
+    function loadInitialData() {
+      try {
+        const localFavorites = localStorage.getItem('bulkshorts_favorites');
+        if (localFavorites) {
+          const parsedFavorites = JSON.parse(localFavorites);
+          if (Array.isArray(parsedFavorites)) {
+            const sanitizedFavorites = parsedFavorites.filter(
+              (fav: unknown): fav is string =>
+                typeof fav === 'string' && !fav.startsWith('blob:')
+            );
+            setFavoritesState(sanitizedFavorites);
+          } else {
+            setFavoritesState([]);
+          }
         } else {
-            const localFavorites = localStorage.getItem('bulkshorts_favorites');
-            setFavoritesState(localFavorites ? JSON.parse(localFavorites) : []);
-            const localHistory = localStorage.getItem('bulkshorts_history');
-            setHistory(localHistory ? JSON.parse(localHistory) : []);
+          setFavoritesState([]);
         }
-        setIsLoading(false);
+      } catch (error) {
+        console.error('Failed to load favorites from storage', error);
+        setFavoritesState([]);
+      }
+
+      try {
+        const localHistory = localStorage.getItem('bulkshorts_history');
+        if (localHistory) {
+          const parsedHistory = JSON.parse(localHistory);
+          if (Array.isArray(parsedHistory)) {
+            setHistory(parsedHistory);
+          } else {
+            setHistory([]);
+          }
+        } else {
+          setHistory([]);
+        }
+      } catch (error) {
+        console.error('Failed to load history from storage', error);
+        setHistory([]);
+      }
+
+      setIsLoading(false);
     }
-    
-    // Only run after auth has resolved.
-    if (!authLoading) {
-        loadInitialData();
-    }
-  }, [user, authLoading]);
+
+    loadInitialData();
+  }, []);
 
   const handleToggleFavorite = (url: string) => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
     setFavoritesState(prev => {
       const newFavorites = prev.includes(url)
         ? prev.filter(u => u !== url)
         : [...prev, url];
-      
-      saveFavorites(user.uid, newFavorites);
-      
+
+      const persistentFavorites = newFavorites.filter(fav => !fav.startsWith('blob:'));
+      localStorage.setItem('bulkshorts_favorites', JSON.stringify(persistentFavorites));
+
       if (viewMode === 'favorites' && !newFavorites.includes(url)) {
         setCurrentUrls(newFavorites);
       }
@@ -283,28 +294,31 @@ function HomePageContent() {
              <Button
               variant="outline"
               onClick={showFavorites}
-              disabled={favorites.length === 0 && !authLoading}
+              disabled={favorites.length === 0}
             >
               <Heart className="mr-2" />
-              Favorites {authLoading ? '' : `(${favorites.length})`}
+              Favorites {`(${favorites.length})`}
             </Button>
-            {user && !authLoading ? (
-              <Button variant="outline" asChild>
-                  <Link href="/account">Account</Link>
+            <Button asChild>
+                <Link href="/discover">Create Batch</Link>
+            </Button>
+            {authLoading ? (
+              <Button variant="ghost" size="icon" disabled>
+                <Loader2 className="h-4 w-4 animate-spin" />
               </Button>
+            ) : user ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline text-sm text-muted-foreground">
+                  {user.email}
+                </span>
+                <Button variant="ghost" onClick={logout}>
+                  Log Out
+                </Button>
+              </div>
             ) : (
-              <>
-                {!authLoading && (
-                  <>
-                    <Button variant="ghost" asChild>
-                        <Link href="/login">Log In</Link>
-                    </Button>
-                    <Button asChild>
-                        <Link href="/signup">Sign Up</Link>
-                    </Button>
-                  </>
-                )}
-              </>
+              <Button variant="ghost" asChild>
+                  <Link href="/login">Log In</Link>
+              </Button>
             )}
           </div>
         </header>
