@@ -13,6 +13,7 @@ type VideoCardProps = {
   isLiked?: boolean;
   isHistoryCard?: boolean;
   overlay?: ReactNode;
+  shouldAutoPlay?: boolean;
 };
 
 export function VideoCard({
@@ -21,6 +22,7 @@ export function VideoCard({
   isLiked = false,
   isHistoryCard = false,
   overlay,
+  shouldAutoPlay = true,
 }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,6 +37,18 @@ export function VideoCard({
     if (!video || !container) return;
 
     const handleVisibilityChange = (entry: IntersectionObserverEntry) => {
+      if (!shouldAutoPlay) {
+        if (pauseTimeoutRef.current) {
+          window.clearTimeout(pauseTimeoutRef.current);
+          pauseTimeoutRef.current = null;
+        }
+        if (!video.paused) {
+          video.pause();
+        }
+        isPlayingRef.current = false;
+        return;
+      }
+
       const rootTop = entry.rootBounds?.top ?? 0;
       const rootHeight = entry.rootBounds?.height ?? window.innerHeight;
       const rootBottom = rootTop + rootHeight;
@@ -90,10 +104,10 @@ export function VideoCard({
       observer.disconnect();
       isPlayingRef.current = false;
     };
-  }, []);
+  }, [shouldAutoPlay]);
 
   useEffect(() => {
-    if (!isHistoryCard) return;
+    if (!isHistoryCard || !shouldAutoPlay) return;
     const video = videoRef.current;
     if (!video || hasAttemptedHistoryAutoplayRef.current) return;
 
@@ -112,12 +126,20 @@ export function VideoCard({
           isPlayingRef.current = false;
         });
     });
-  }, [isHistoryCard]);
+  }, [isHistoryCard, shouldAutoPlay]);
 
   useEffect(() => {
     setIsReady(false);
     hasAttemptedHistoryAutoplayRef.current = false;
-  }, [src]);
+    if (pauseTimeoutRef.current) {
+      window.clearTimeout(pauseTimeoutRef.current);
+      pauseTimeoutRef.current = null;
+    }
+    if (!shouldAutoPlay && videoRef.current) {
+      videoRef.current.pause();
+      isPlayingRef.current = false;
+    }
+  }, [src, shouldAutoPlay]);
 
   return (
     <div

@@ -351,15 +351,21 @@ export function VideoGrid({
           ref={scrollContainerRef}
           className={cn('grid gap-4 md:gap-6', gridColsMap[gridSize] ?? gridColsMap[3])}
         >
-          {videos.map(video => (
-            <div key={video.id} id={`video-wrapper-${safeId(video.id)}`} className="w-full">
-              <VideoCard
-                src={video.src}
-                onClick={() => handleSelectVideo(video.id)}
-                isLiked={favorites.includes(video.id)}
-              />
-            </div>
-          ))}
+          {videos.map((video, index) => {
+            const hasMultipleRows = videos.length > gridSize;
+            const shouldAutoPlay = !hasMultipleRows || index < videos.length - gridSize;
+
+            return (
+              <div key={video.id} id={`video-wrapper-${safeId(video.id)}`} className="w-full">
+                <VideoCard
+                  src={video.src}
+                  onClick={() => handleSelectVideo(video.id)}
+                  isLiked={favorites.includes(video.id)}
+                  shouldAutoPlay={shouldAutoPlay}
+                />
+              </div>
+            );
+          })}
         </div>
         <div className="hidden lg:block">
           <Card className="p-4 bg-card/80 backdrop-blur-sm sticky top-4">
