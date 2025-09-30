@@ -3,14 +3,16 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Eye, Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { PostRecord, deletePost, listPosts, subscribeToPosts } from '@/lib/post-store';
+import { PostRecord, deletePost, getPostDisplayLabel, listPosts, subscribeToPosts, updatePost } from '@/lib/post-store';
+import { PostCard } from '@/components/post-card';
+import { PostDetailsDialog } from '@/components/post-details-dialog';
+import { PostEditorDialog } from '@/components/post-editor-dialog';
 
 function AccountPageContent() {
   const { user, loading, logout } = useAuth();
@@ -21,6 +23,11 @@ function AccountPageContent() {
 
   const [posts, setPosts] = useState<PostRecord[]>([]);
   const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [detailsTarget, setDetailsTarget] = useState<PostRecord | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [editorTarget, setEditorTarget] = useState<PostRecord | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [pendingPostId, setPendingPostId] = useState<string | null>(null);
 
   const refreshPosts = useCallback(() => {
     setIsLoadingPosts(true);
@@ -80,18 +87,74 @@ function AccountPageContent() {
 
   const handleDeletePost = useCallback(
     (post: PostRecord) => {
-      const confirmed = window.confirm(`Delete "${post.title || post.name}"? This cannot be undone.`);
+      const label = getPostDisplayLabel(post);
+      const confirmed = window.confirm(`Delete "${label}"? This cannot be undone.`);
       if (!confirmed) return;
-
+      setPendingPostId(post.id);
       deletePost(activeUserId, post.id);
       refreshPosts();
       toast({
         title: 'Post deleted',
-        description: `${post.title || post.name} has been removed from your account.`,
+        description: `${label} has been removed from your account.`,
       });
+      if (detailsTarget?.id === post.id) {
+        setIsDetailsOpen(false);
+        setDetailsTarget(null);
+      }
+      if (editorTarget?.id === post.id) {
+        setIsEditorOpen(false);
+        setEditorTarget(null);
+      }
+      setPendingPostId(null);
     },
-    [activeUserId, refreshPosts, toast]
+    [activeUserId, refreshPosts, toast, detailsTarget, editorTarget]
   );
+
+  const handleShowDetails = useCallback((post: PostRecord) => {
+    setDetailsTarget(post);
+    setIsDetailsOpen(true);
+  }, []);
+
+  const handleShowEditor = useCallback((post: PostRecord) => {
+    setEditorTarget(post);
+    setIsEditorOpen(true);
+  }, []);
+
+  const handleSavePost = useCallback(async (postId: string, updates: {
+    name: string;
+    title: string;
+    description: string;
+    mediaMeta: PostRecord['mediaMeta'];
+  }) => {
+    try {
+      setPendingPostId(postId);
+      const updated = updatePost(activeUserId, postId, {
+        name: updates.name,
+        title: updates.title,
+        description: updates.description,
+        mediaMeta: updates.mediaMeta,
+      });
+      if (!updated) {
+        throw new Error('Unable to update this post. It may have been removed.');
+      }
+      setEditorTarget(updated);
+      setDetailsTarget(prev => (prev?.id === updated.id ? updated : prev));
+      refreshPosts();
+      toast({
+        title: 'Post updated',
+        description: `${getPostDisplayLabel(updated)} has been saved.`,
+      });
+    } catch (error) {
+      console.error('Failed to update post', error);
+      toast({
+        title: 'Failed to update post',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setPendingPostId(null);
+    }
+  }, [activeUserId, refreshPosts, toast]);
 
   const emptyState = useMemo(
     () => (
@@ -161,39 +224,43 @@ function AccountPageContent() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {posts.map(post => (
-              <Card key={post.id} className="flex h-full flex-col justify-between bg-card/80 backdrop-blur">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <CardTitle className="line-clamp-1 text-lg">{post.title || post.name}</CardTitle>
-                      <CardDescription className="line-clamp-1">{post.name}</CardDescription>
-                    </div>
-                    <Badge variant="secondary">{post.mediaIds.length} videos</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="line-clamp-4 whitespace-pre-wrap text-sm text-muted-foreground">
-                    {post.description || 'No description provided.'}
-                  </p>
-                </CardContent>
-                <CardFooter className="flex items-center justify-between">
-                  <div className="text-xs text-muted-foreground">
-                    Saved {new Date(post.createdAt).toLocaleString()}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => handleViewPost(post)}>
-                      <Eye className="mr-2 h-4 w-4" /> View
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDeletePost(post)}>
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete
-                    </Button>
-                  </div>
-                </CardFooter>
-              </Card>
+              <PostCard
+                key={post.id}
+                post={post}
+                onView={handleViewPost}
+                onDelete={handleDeletePost}
+                onDetails={handleShowDetails}
+                onEdit={handleShowEditor}
+                disableActions={pendingPostId === post.id}
+              />
             ))}
           </div>
         )}
       </main>
+      <PostDetailsDialog
+        post={detailsTarget}
+        open={isDetailsOpen}
+        onOpenChange={open => {
+          setIsDetailsOpen(open);
+          if (!open) {
+            setDetailsTarget(null);
+          }
+        }}
+      />
+      <PostEditorDialog
+        post={editorTarget}
+        open={isEditorOpen}
+        onOpenChange={open => {
+          if (pendingPostId && !open) {
+            return;
+          }
+          setIsEditorOpen(open);
+          if (!open) {
+            setEditorTarget(null);
+          }
+        }}
+        onSave={handleSavePost}
+      />
     </div>
   );
 }

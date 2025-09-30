@@ -25,7 +25,7 @@ import {
   saveRemoteMedia,
   assignMediaToUser,
 } from '@/lib/media-store';
-import { createPost } from '@/lib/post-store';
+import { createPost, getPostDisplayLabel } from '@/lib/post-store';
 
 const isHttpUrl = (value: string) => /^https?:/i.test(value);
 const VIDEO_EXTENSIONS = ['.mp4', '.mov', '.webm', '.mkv', '.avi', '.m4v'];
@@ -145,20 +145,16 @@ export function UrlProcessor() {
       }
 
       const remoteRecords = await Promise.all(validHttpUrls.map(url => saveRemoteMedia(url, userId)));
-      // Initialize metadata for remote videos
-      setVideoMeta(prev => {
-        const updated = { ...prev };
-        remoteRecords.forEach(record => {
-          if (!updated[record.id]) {
-            updated[record.id] = {
-              title: record.title ?? '',
-              description: '',
-              subtitle: '',
-              postFact: '',
-            };
-          }
-        });
-        return updated;
+      const combinedMeta = { ...videoMeta };
+      remoteRecords.forEach(record => {
+        if (!combinedMeta[record.id]) {
+          combinedMeta[record.id] = {
+            title: record.title ?? '',
+            description: '',
+            subtitle: '',
+            postFact: '',
+          };
+        }
       });
       const allIds = dedupe([
         ...localMediaRecords.map(record => record.id),
@@ -173,12 +169,23 @@ export function UrlProcessor() {
       await assignMediaToUser(allIds, userId);
 
       // Collect per-video metadata for all videos
-      const mediaMeta = allIds.map(id => ({
-        id,
-        ...videoMeta[id],
-      }));
+      const mediaMeta = allIds.map(id => {
+        const meta = combinedMeta[id] ?? {
+          title: '',
+          description: '',
+          subtitle: '',
+          postFact: '',
+        };
+        return {
+          id,
+          title: meta.title,
+          description: meta.description,
+          subtitle: meta.subtitle,
+          postFact: meta.postFact,
+        };
+      });
 
-      await createPost({
+      const createdPost = await createPost({
         userId,
         name: postName,
         title: postTitle,
@@ -187,9 +194,10 @@ export function UrlProcessor() {
         mediaMeta, // Pass metadata for each video
       });
 
+      const displayLabel = getPostDisplayLabel(createdPost);
       toast({
         title: 'Post created',
-        description: `${postTitle || postName} is ready in your posts list.`,
+        description: `${displayLabel} is ready in your posts list.`,
       });
 
       const mediaParam = encodeURIComponent(JSON.stringify(allIds));
@@ -215,10 +223,6 @@ export function UrlProcessor() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!postName.trim() || !postTitle.trim() || !postDescription.trim()) {
-      setError('Please provide a post name, title, and description before uploading.');
-      return;
-    }
     const value = textareaRef.current?.value ?? '';
     const urls = value
       .split('\n')
@@ -247,7 +251,7 @@ export function UrlProcessor() {
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="post-name">Post Name</Label>
+              <Label htmlFor="post-name">Post Name (optional)</Label>
               <Input
                 id="post-name"
                 name="postName"
@@ -255,11 +259,10 @@ export function UrlProcessor() {
                 value={postName}
                 onChange={event => setPostName(event.target.value)}
                 disabled={isProcessing}
-                required
               />
             </div>
             <div className="flex flex-col gap-2 md:col-span-2">
-              <Label htmlFor="post-title">Title</Label>
+              <Label htmlFor="post-title">Title (optional)</Label>
               <Input
                 id="post-title"
                 name="postTitle"
@@ -267,12 +270,11 @@ export function UrlProcessor() {
                 value={postTitle}
                 onChange={event => setPostTitle(event.target.value)}
                 disabled={isProcessing}
-                required
               />
             </div>
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor="post-description">Description</Label>
+            <Label htmlFor="post-description">Description (optional)</Label>
             <Textarea
               id="post-description"
               name="postDescription"
@@ -281,7 +283,6 @@ export function UrlProcessor() {
               value={postDescription}
               onChange={event => setPostDescription(event.target.value)}
               disabled={isProcessing}
-              required
             />
           </div>
           <Textarea

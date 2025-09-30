@@ -9,6 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { VideoGrid, type HistoryEntry } from '@/components/video-grid';
 import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { PostCard } from '@/components/post-card';
+import { PostDetailsDialog } from '@/components/post-details-dialog';
+import { PostEditorDialog } from '@/components/post-editor-dialog';
 import {
   MediaRecordWithBlob,
   getMediaBatch,
@@ -17,6 +21,14 @@ import {
   saveRemoteMedia,
   updateMedia,
 } from '@/lib/media-store';
+import {
+  PostRecord,
+  deletePost,
+  getPostDisplayLabel,
+  listPosts,
+  subscribeToPosts,
+  updatePost,
+} from '@/lib/post-store';
 import { ResolvedMediaItem } from '@/types/media';
 
 const HISTORY_KEY = 'bulkshorts_history_media';
@@ -38,9 +50,17 @@ function HomePageContent() {
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState(5);
   const [isLoading, setIsLoading] = useState(true);
+  const [posts, setPosts] = useState<PostRecord[]>([]);
+  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
+  const [detailsTarget, setDetailsTarget] = useState<PostRecord | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [editorTarget, setEditorTarget] = useState<PostRecord | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [pendingPostId, setPendingPostId] = useState<string | null>(null);
 
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   const { user, loading: authLoading, logout } = useAuth();
   const userId = user?.email ?? 'guest';
 
@@ -112,6 +132,105 @@ function HomePageContent() {
   const persistFavorites = useCallback((ids: string[]) => {
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(ids));
   }, []);
+
+  const refreshPosts = useCallback(() => {
+    setIsLoadingPosts(true);
+    try {
+      const records = listPosts(userId);
+      setPosts(records);
+    } catch (error) {
+      console.error('Failed to load posts', error);
+    } finally {
+      setIsLoadingPosts(false);
+    }
+  }, [userId]);
+
+  const handleViewPostCard = useCallback(
+    (post: PostRecord) => {
+      if (!post.mediaIds.length) {
+        toast({
+          title: 'No media found for this post',
+          description: 'Try uploading new videos to this post.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      const mediaParam = encodeURIComponent(JSON.stringify(post.mediaIds));
+      router.push(`/?mediaIds=${mediaParam}`);
+    },
+    [router, toast]
+  );
+
+  const handleDeletePostCard = useCallback(
+    (post: PostRecord) => {
+      const label = getPostDisplayLabel(post);
+      const confirmed = window.confirm(`Delete "${label}"? This cannot be undone.`);
+      if (!confirmed) return;
+      setPendingPostId(post.id);
+      deletePost(userId, post.id);
+      refreshPosts();
+      toast({
+        title: 'Post deleted',
+        description: `${label} has been removed from your posts.`,
+      });
+      if (detailsTarget?.id === post.id) {
+        setIsDetailsOpen(false);
+        setDetailsTarget(null);
+      }
+      if (editorTarget?.id === post.id) {
+        setIsEditorOpen(false);
+        setEditorTarget(null);
+      }
+      setPendingPostId(null);
+    },
+    [detailsTarget, editorTarget, refreshPosts, toast, userId]
+  );
+
+  const handleShowPostDetails = useCallback((post: PostRecord) => {
+    setDetailsTarget(post);
+    setIsDetailsOpen(true);
+  }, []);
+
+  const handleShowPostEditor = useCallback((post: PostRecord) => {
+    setEditorTarget(post);
+    setIsEditorOpen(true);
+  }, []);
+
+  const handleSavePostCard = useCallback(async (postId: string, updates: {
+    name: string;
+    title: string;
+    description: string;
+    mediaMeta: PostRecord['mediaMeta'];
+  }) => {
+    try {
+      setPendingPostId(postId);
+      const updated = updatePost(userId, postId, {
+        name: updates.name,
+        title: updates.title,
+        description: updates.description,
+        mediaMeta: updates.mediaMeta,
+      });
+      if (!updated) {
+        throw new Error('Unable to update this post. It may have been removed.');
+      }
+      setEditorTarget(updated);
+      setDetailsTarget(prev => (prev?.id === updated.id ? updated : prev));
+      refreshPosts();
+      toast({
+        title: 'Post updated',
+        description: `${getPostDisplayLabel(updated)} has been saved.`,
+      });
+    } catch (error) {
+      console.error('Failed to update post', error);
+      toast({
+        title: 'Failed to update post',
+        description: error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setPendingPostId(null);
+    }
+  }, [refreshPosts, toast, userId]);
 
   const addHistoryEntry = useCallback(
     (mediaIds: string[]) => {
@@ -195,6 +314,28 @@ function HomePageContent() {
       void handleMediaParams(mediaIdsParam, urlsParam);
     }
   }, [handleMediaParams, searchParams]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    refreshPosts();
+    const unsubscribe = subscribeToPosts(userId, refreshPosts);
+    return unsubscribe;
+  }, [authLoading, refreshPosts, userId]);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refreshPosts();
+      }
+    };
+
+    window.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', refreshPosts);
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', refreshPosts);
+    };
+  }, [refreshPosts]);
 
   useEffect(() => {
     let isMounted = true;
@@ -423,6 +564,40 @@ function HomePageContent() {
 
     const recommendedItems = history.slice(0, 6);
 
+    const postsSection = (
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-2xl font-bold">My Posts</h2>
+          <Button variant="outline" asChild>
+            <Link href="/discover">Create Post</Link>
+          </Button>
+        </div>
+        {isLoadingPosts ? (
+          <div className="flex items-center justify-center py-10">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : posts.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {posts.map(post => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onView={handleViewPostCard}
+                onDelete={handleDeletePostCard}
+                onDetails={handleShowPostDetails}
+                onEdit={handleShowPostEditor}
+                disableActions={pendingPostId === post.id}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-lg border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
+            Your posts will appear here once you create them from the Discover page.
+          </div>
+        )}
+      </section>
+    );
+
     if (currentMedia.length > 0) {
       const mediaForGrid =
         viewMode === 'favorites'
@@ -450,6 +625,8 @@ function HomePageContent() {
             loadBatch={loadBatchFromHistory}
             onSaveMedia={handleSaveMediaEdits}
           />
+
+          {postsSection}
 
           {recommendedItems.length > 0 && (
             <section className="space-y-4">
@@ -484,6 +661,8 @@ function HomePageContent() {
           <Input placeholder="Search your history..." className="pl-10" />
         </div>
 
+          {postsSection}
+
         {history.length === 0 && (
           <div className="rounded-lg border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
             Your recent batches will appear here after you create or upload videos.
@@ -517,9 +696,16 @@ function HomePageContent() {
     handleSelectVideoForFocus,
     handleToggleFavorite,
     history,
+    handleDeletePostCard,
+    handleShowPostDetails,
+    handleShowPostEditor,
+    handleViewPostCard,
     isAutoScrolling,
     isLoading,
+    isLoadingPosts,
     loadBatchFromHistory,
+    pendingPostId,
+    posts,
     renderHistoryButtons,
     scrollSpeed,
     selectedMediaId,
@@ -585,6 +771,31 @@ function HomePageContent() {
           </div>
         </footer>
       )}
+
+      <PostDetailsDialog
+        post={detailsTarget}
+        open={isDetailsOpen}
+        onOpenChange={open => {
+          setIsDetailsOpen(open);
+          if (!open) {
+            setDetailsTarget(null);
+          }
+        }}
+      />
+      <PostEditorDialog
+        post={editorTarget}
+        open={isEditorOpen}
+        onOpenChange={open => {
+          if (pendingPostId && !open) {
+            return;
+          }
+          setIsEditorOpen(open);
+          if (!open) {
+            setEditorTarget(null);
+          }
+        }}
+        onSave={handleSavePostCard}
+      />
     </div>
   );
 }

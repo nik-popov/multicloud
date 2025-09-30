@@ -1,3 +1,11 @@
+export type PostMediaMeta = {
+  id: string;
+  title: string;
+  description: string;
+  subtitle: string;
+  postFact: string;
+};
+
 export type PostRecord = {
   id: string;
   userId: string;
@@ -5,16 +13,20 @@ export type PostRecord = {
   title: string;
   description: string;
   mediaIds: string[];
+  mediaMeta: PostMediaMeta[];
   createdAt: string;
 };
 
 export type CreatePostInput = {
   userId: string;
-  name: string;
-  title: string;
-  description: string;
+  name?: string;
+  title?: string;
+  description?: string;
   mediaIds: string[];
+  mediaMeta?: PostMediaMeta[];
 };
+
+export type UpdatePostInput = Partial<Pick<PostRecord, 'name' | 'title' | 'description' | 'mediaMeta'>>;
 
 const STORAGE_KEY = 'bulkshorts_posts_v1';
 
@@ -65,6 +77,27 @@ function sanitizeMediaIds(mediaIds: string[]): string[] {
   return Array.from(new Set(mediaIds.filter(id => typeof id === 'string' && id.trim().length > 0)));
 }
 
+function sanitizeMediaMeta(meta: PostMediaMeta[] | undefined, mediaIds: string[]): PostMediaMeta[] {
+  if (!Array.isArray(meta)) return mediaIds.map(id => ({ id, title: '', description: '', subtitle: '', postFact: '' }));
+  const allowedIds = new Set(mediaIds);
+  const normalized = meta
+    .filter(entry => entry && typeof entry === 'object' && allowedIds.has(entry.id))
+    .map(entry => ({
+      id: entry.id,
+      title: entry.title?.trim() ?? '',
+      description: entry.description?.trim() ?? '',
+      subtitle: entry.subtitle?.trim() ?? '',
+      postFact: entry.postFact?.trim() ?? '',
+    }));
+
+  const missingIds = mediaIds.filter(id => !normalized.some(entry => entry.id === id));
+  return normalized.concat(missingIds.map(id => ({ id, title: '', description: '', subtitle: '', postFact: '' })));
+}
+
+function sanitizeText(value: string | undefined | null): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
 function normalizeUserId(userId: string): string {
   return userId?.trim().toLowerCase() || 'guest';
 }
@@ -80,13 +113,20 @@ export function createPost(input: CreatePostInput): PostRecord {
   }
 
   const storage = readStorage();
+  const mediaMeta = sanitizeMediaMeta(input.mediaMeta, mediaIds);
+
+  const name = sanitizeText(input.name);
+  const title = sanitizeText(input.title);
+  const description = sanitizeText(input.description);
+
   const post: PostRecord = {
     id: getRandomId(),
     userId,
-    name: input.name.trim(),
-    title: input.title.trim(),
-    description: input.description.trim(),
+    name,
+    title,
+    description,
     mediaIds,
+    mediaMeta,
     createdAt: new Date().toISOString(),
   };
 
@@ -98,6 +138,20 @@ export function createPost(input: CreatePostInput): PostRecord {
   return post;
 }
 
+export function getPostDisplayLabel(post: Pick<PostRecord, 'title' | 'name'>, fallback = 'Untitled post'): string {
+  const normalizedTitle = post.title.trim();
+  if (normalizedTitle) {
+    return normalizedTitle;
+  }
+
+  const normalizedName = post.name.trim();
+  if (normalizedName) {
+    return normalizedName;
+  }
+
+  return fallback;
+}
+
 export function listPosts(userId: string): PostRecord[] {
   if (!isBrowser()) {
     return [];
@@ -105,7 +159,12 @@ export function listPosts(userId: string): PostRecord[] {
   const storage = readStorage();
   const normalized = normalizeUserId(userId);
   const posts = storage[normalized] ?? [];
-  return [...posts].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  return posts
+    .map(post => ({
+      ...post,
+      mediaMeta: sanitizeMediaMeta(post.mediaMeta, post.mediaIds),
+    }))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
 export function deletePost(userId: string, postId: string): void {
@@ -120,6 +179,39 @@ export function deletePost(userId: string, postId: string): void {
   storage[normalized] = nextPosts;
   writeStorage(storage);
   emitPostsChanged(normalized);
+}
+
+export function updatePost(userId: string, postId: string, updates: UpdatePostInput): PostRecord | null {
+  if (!isBrowser()) {
+    return null;
+  }
+
+  const storage = readStorage();
+  const normalized = normalizeUserId(userId);
+  const posts = storage[normalized] ?? [];
+  const index = posts.findIndex(post => post.id === postId);
+  if (index === -1) {
+    return null;
+  }
+
+  const current = posts[index];
+  const mediaMeta = updates.mediaMeta
+    ? sanitizeMediaMeta(updates.mediaMeta, current.mediaIds)
+    : current.mediaMeta;
+
+  const nextPost: PostRecord = {
+    ...current,
+    name: updates.name !== undefined ? updates.name.trim() : current.name,
+    title: updates.title !== undefined ? updates.title.trim() : current.title,
+    description: updates.description !== undefined ? updates.description.trim() : current.description,
+    mediaMeta,
+  };
+
+  posts[index] = nextPost;
+  storage[normalized] = posts;
+  writeStorage(storage);
+  emitPostsChanged(normalized);
+  return nextPost;
 }
 
 export function subscribeToPosts(userId: string, callback: () => void): () => void {
