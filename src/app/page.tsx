@@ -605,6 +605,8 @@ function HomePageContent() {
                 src={preview.src}
                 onClick={handleClick}
                 isHistoryCard
+                shouldAutoPlay={false}
+                playOnHover
                 overlay={overlayContent}
               />
             );

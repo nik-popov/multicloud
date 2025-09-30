@@ -362,6 +362,7 @@ export function VideoGrid({
                   onClick={() => handleSelectVideo(video.id)}
                   isLiked={favorites.includes(video.id)}
                   shouldAutoPlay={shouldAutoPlay}
+                  playOnHover={!shouldAutoPlay}
                 />
               </div>
             );
