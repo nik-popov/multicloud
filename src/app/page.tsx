@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Heart, Loader2, Search } from 'lucide-react';
@@ -8,6 +8,8 @@ import { Heart, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { VideoGrid, type HistoryEntry } from '@/components/video-grid';
+import { VideoCard } from '@/components/video-card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { PostCard } from '@/components/post-card';
@@ -42,6 +44,7 @@ type MediaUpdates = Partial<Pick<MediaRecordWithBlob, 'title' | 'description' | 
 function HomePageContent() {
   const [currentMedia, setCurrentMedia] = useState<ResolvedMediaItem[]>([]);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyPreviews, setHistoryPreviews] = useState<Record<string, ResolvedMediaItem | null>>({});
   const [favorites, setFavoritesState] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'main' | 'favorites'>('main');
   const [focusViewActive, setFocusViewActive] = useState(false);
@@ -65,6 +68,10 @@ function HomePageContent() {
   const userId = user?.email ?? 'guest';
 
   const objectUrlCacheRef = useRef<Map<string, string>>(new Map());
+  const previewQueue = useMemo(
+    () => history.filter(entry => historyPreviews[entry.timestamp] === undefined && entry.mediaIds.length > 0),
+    [history, historyPreviews]
+  );
 
   const applyCurrentMedia = useCallback((items: ResolvedMediaItem[]) => {
     setCurrentMedia(prev => {
@@ -124,6 +131,12 @@ function HomePageContent() {
     resolved.sort((a, b) => (ordering.get(a.id)! - ordering.get(b.id)!));
     return resolved;
   }, [userId]);
+
+  const resolveMediaByIdsRef = useRef(resolveMediaByIds);
+
+  useEffect(() => {
+    resolveMediaByIdsRef.current = resolveMediaByIds;
+  }, [resolveMediaByIds]);
 
   const persistHistory = useCallback((entries: HistoryEntry[]) => {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(entries));
@@ -316,6 +329,32 @@ function HomePageContent() {
   }, [handleMediaParams, searchParams]);
 
   useEffect(() => {
+    if (isLoading || isLoadingPosts) {
+      return;
+    }
+
+    const hasMediaParams = Boolean(searchParams.get('mediaIds') || searchParams.get('urls'));
+    const hasContent =
+      currentMedia.length > 0 ||
+      history.length > 0 ||
+      favorites.length > 0 ||
+      posts.length > 0;
+
+    if (!hasMediaParams && !hasContent) {
+      router.replace('/discover');
+    }
+  }, [
+    currentMedia.length,
+    favorites.length,
+    history.length,
+    isLoading,
+    isLoadingPosts,
+    posts.length,
+    router,
+    searchParams,
+  ]);
+
+  useEffect(() => {
     if (authLoading) return;
     refreshPosts();
     const unsubscribe = subscribeToPosts(userId, refreshPosts);
@@ -477,12 +516,19 @@ function HomePageContent() {
   );
 
   const loadBatchFromHistory = useCallback(
-    async (mediaIds: string[]) => {
+    async (mediaIds: string[], options?: { focus?: boolean }) => {
       const resolved = await resolveMediaByIds(mediaIds);
       applyCurrentMedia(resolved);
       setViewMode('main');
-      setFocusViewActive(false);
-      setSelectedMediaId(null);
+
+      const shouldFocus = Boolean(options?.focus && resolved.length > 0);
+      if (shouldFocus) {
+        setFocusViewActive(true);
+        setSelectedMediaId(resolved[0].id);
+      } else {
+        setFocusViewActive(false);
+        setSelectedMediaId(null);
+      }
     },
     [applyCurrentMedia, resolveMediaByIds]
   );
@@ -528,28 +574,119 @@ function HomePageContent() {
     []
   );
 
+  const handleHistoryPreviewClick = useCallback(
+    (entry: HistoryEntry) => {
+      void loadBatchFromHistory(entry.mediaIds, { focus: true });
+    },
+    [loadBatchFromHistory]
+  );
+
   const renderHistoryButtons = useCallback(
     (items: HistoryEntry[], gridClasses = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4') => (
       <div className={gridClasses}>
-        {items.map((batch, index) => (
-          <button
-            key={`${batch.timestamp}-${index}`}
-            type="button"
-            onClick={() => void loadBatchFromHistory(batch.mediaIds)}
-            className="group relative overflow-hidden rounded-lg border bg-card/70 p-4 text-left shadow-lg transition-transform duration-300 ease-in-out hover:scale-105"
-          >
-            <span className="block text-sm font-semibold text-primary">
-              {new Date(batch.timestamp).toLocaleDateString()}
-            </span>
-            <span className="block text-xs text-muted-foreground">
-              {batch.mediaIds.length} videos
-            </span>
-          </button>
-        ))}
+        {items.map((batch, index) => {
+          const preview = historyPreviews[batch.timestamp];
+          const date = new Date(batch.timestamp);
+          const dateLabel = date.toLocaleDateString();
+          const timeLabel = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const secondaryText = preview === null ? 'Preview unavailable' : `${batch.mediaIds.length} videos · ${timeLabel}`;
+          const overlayContent = (
+            <div className="flex h-full flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 sm:p-4">
+              <span className="text-sm font-semibold leading-tight text-white">{dateLabel}</span>
+              <span className="text-xs text-white/75">{secondaryText}</span>
+            </div>
+          );
+          const handleClick = () => handleHistoryPreviewClick(batch);
+
+          if (preview && preview.src) {
+            return (
+              <VideoCard
+                key={`${batch.timestamp}-${index}`}
+                src={preview.src}
+                onClick={handleClick}
+                isHistoryCard
+                overlay={overlayContent}
+              />
+            );
+          }
+
+          return (
+            <button
+              key={`${batch.timestamp}-${index}`}
+              type="button"
+              onClick={handleClick}
+              className="group relative aspect-[9/16] w-full overflow-hidden rounded-2xl border bg-card/70 shadow-lg transition-transform duration-300 ease-in-out hover:scale-105"
+            >
+              <Skeleton className="h-full w-full" />
+              <div className="pointer-events-none absolute inset-0 flex h-full flex-col justify-end bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 sm:p-4">
+                <span className="text-sm font-semibold leading-tight text-white">{dateLabel}</span>
+                <span className="text-xs text-white/75">
+                  {preview === null ? 'Preview unavailable' : `${batch.mediaIds.length} videos · ${timeLabel}`}
+                </span>
+              </div>
+            </button>
+          );
+        })}
       </div>
     ),
-    [loadBatchFromHistory]
+    [handleHistoryPreviewClick, historyPreviews]
   );
+
+  useEffect(() => {
+    if (previewQueue.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadPreviews = async () => {
+      for (const entry of previewQueue) {
+        if (cancelled) {
+          break;
+        }
+
+        const firstId = entry.mediaIds.find(Boolean);
+        if (!firstId) {
+          setHistoryPreviews(prev => {
+            if (prev[entry.timestamp] !== undefined) {
+              return prev;
+            }
+            return { ...prev, [entry.timestamp]: null };
+          });
+          continue;
+        }
+
+        try {
+          const [preview] = await resolveMediaByIdsRef.current([firstId]);
+          if (cancelled) {
+            return;
+          }
+          setHistoryPreviews(prev => {
+            if (prev[entry.timestamp] !== undefined) {
+              return prev;
+            }
+            return { ...prev, [entry.timestamp]: preview ?? null };
+          });
+        } catch {
+          if (cancelled) {
+            return;
+          }
+          setHistoryPreviews(prev => {
+            if (prev[entry.timestamp] !== undefined) {
+              return prev;
+            }
+            return { ...prev, [entry.timestamp]: null };
+          });
+        }
+      }
+    };
+
+    void loadPreviews();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [previewQueue]);
 
   const renderContent = useCallback(() => {
     if (isLoading) {
@@ -719,7 +856,7 @@ function HomePageContent() {
       {!focusViewActive && (
         <header className="flex items-center justify-between p-4 border-b shrink-0">
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-2xl font-bold tracking-tight text-primary cursor-pointer">
+            <Link href="/discover" className="text-2xl font-bold tracking-tight text-primary cursor-pointer">
               bulkshorts
             </Link>
           </div>

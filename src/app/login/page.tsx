@@ -28,7 +28,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace('/');
+      router.replace('/discover');
     }
   }, [loading, user, router]);
 
@@ -39,7 +39,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.replace('/');
+      router.replace('/discover');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in');
     } finally {
@@ -52,7 +52,7 @@ export default function LoginPage() {
       <header className="flex items-center justify-between p-4 border-b shrink-0">
         <div className="flex items-center gap-4">
           <Link
-            href="/"
+            href="/discover"
             className="text-2xl font-bold tracking-tight text-primary cursor-pointer"
           >
             bulkshorts

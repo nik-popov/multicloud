@@ -3,7 +3,7 @@
 
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { useRef, useEffect } from 'react';
+import { ReactNode, useRef, useEffect } from 'react';
 import { Heart } from 'lucide-react';
 
 type VideoCardProps = {
@@ -11,6 +11,7 @@ type VideoCardProps = {
   onClick?: () => void;
   isLiked?: boolean;
   isHistoryCard?: boolean;
+  overlay?: ReactNode;
 };
 
 export function VideoCard({
@@ -18,6 +19,7 @@ export function VideoCard({
   onClick,
   isLiked = false,
   isHistoryCard = false,
+  overlay,
 }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -92,6 +94,7 @@ export function VideoCard({
                 <Heart className="h-6 w-6 text-red-500 fill-red-500" />
               </div>
             )}
+            {overlay ? <div className="absolute inset-0 pointer-events-none">{overlay}</div> : null}
           </div>
         </CardContent>
       </Card>

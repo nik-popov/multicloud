@@ -180,7 +180,7 @@ function AccountPageContent() {
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b p-4">
         <div className="flex items-center gap-4">
-          <Link href="/" className="text-2xl font-bold tracking-tight text-primary">
+          <Link href="/discover" className="text-2xl font-bold tracking-tight text-primary">
             bulkshorts
           </Link>
         </div>
